@@ -15,7 +15,7 @@ from glyphsLib.classes import (
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from families import FAMILIES  # noqa: E402
+from families import FAMILIES, FONT_VERSION  # noqa: E402
 from rounding import (  # noqa: E402
     Contour, GeometryError, OutlineContext, add_automatic_ligatures, classify_corner, cross, dot,
     evaluate, filled,
@@ -195,7 +195,7 @@ class RoundedGeometryTests(unittest.TestCase):
         original_counter = [point(n) for n in font.glyphs["O"].layers["Thin"].paths[1].nodes]
         rounded, report = round_font(font)
         self.assertEqual(rounded.familyName, "Goist")
-        self.assertEqual((rounded.versionMajor, rounded.versionMinor), (1, 0))
+        self.assertEqual((rounded.versionMajor, rounded.versionMinor), FONT_VERSION)
         self.assertEqual(rounded.instances[0].customParameters["fileName"], "Goist-Regular")
         self.assertEqual(rounded.features[0].code, font.features[0].code)
         self.assertEqual(rounded.kerning, font.kerning)

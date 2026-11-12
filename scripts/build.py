@@ -29,7 +29,7 @@ from fontTools.ttLib import TTFont
 from ttfautohint import TAError, ttfautohint
 import yaml
 
-from families import FAMILIES, Family
+from families import FAMILIES, FONT_VERSION, FONT_VERSION_STRING, Family
 from rounding import add_automatic_ligatures
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -325,8 +325,9 @@ def rounded(family: Family, config: dict, state: dict, env: dict, jobs: int, for
             raise RuntimeError(f"Missing source generation artifact: {path}")
     for source in sources:
         font = glyphsLib.load(str(source))
-        if font.familyName != family.name or (font.versionMajor, font.versionMinor) != (1, 0):
-            raise RuntimeError(f"Generated source must declare family {family.name} and version 1.000: {source}")
+        if font.familyName != family.name or (font.versionMajor, font.versionMinor) != FONT_VERSION:
+            raise RuntimeError(f"Generated source must declare family {family.name} "
+                               f"and version {FONT_VERSION_STRING}: {source}")
     with tempfile.TemporaryDirectory(prefix="rounded-", dir=build) as temporary:
         staged = compile_family(config, sources, family.key, env, jobs, Path(temporary))
         webfonts(staged, family)
@@ -353,8 +354,9 @@ def main():
     family = FAMILIES[args.family]
     build_dir(family).mkdir(parents=True, exist_ok=True)
     config = yaml.safe_load((sources_dir(family) / "config.yaml").read_text(encoding="utf-8"))
-    if config.get("familyName") != family.name:
-        raise RuntimeError(f"{sources_dir(family) / 'config.yaml'} must declare familyName {family.name}")
+    if config.get("familyName") != family.name or str(config.get("version")) != FONT_VERSION_STRING:
+        raise RuntimeError(f"{sources_dir(family) / 'config.yaml'} must declare familyName {family.name} "
+                           f"and version '{FONT_VERSION_STRING}'")
     state = input_state(family, epoch)
     if args.baseline:
         baseline(family, config, state, env, args.jobs, args.force)

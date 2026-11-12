@@ -54,14 +54,32 @@ Load `fonts/Goist/webfonts/goist.css` or `fonts/GoistMono/webfonts/goist-mono.cs
 <link rel="stylesheet" href="/fonts/GoistMono/webfonts/goist-mono.css">
 ```
 
-## npm release
+## Versioning and npm release
+
+Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package version (currently `0.0.1`) is managed by [Changesets](https://github.com/changesets/changesets) in `packages/goist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
+
+With every change that should ship, add a changeset describing it:
 
 ```sh
-make package        # build fonts, stage them into packages/goist/assets/, write goist-<version>.tgz
-cd packages/goist && npm publish
+cd packages/goist
+pnpm install
+pnpm changeset          # pick patch / minor / major and write the summary
 ```
 
-`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2` (likewise for Goist Mono), so publishing always ships the committed fonts. Bump `version` in `packages/goist/package.json` with each font release and add an entry to `CHANGELOG.md`.
+To release:
+
+```sh
+make build                       # from the repository root; commit fonts/
+cd packages/goist
+pnpm run version                 # apply changesets: bump package.json, update CHANGELOG.md
+git commit -am "Version packages" && git push
+pnpm release                     # changeset publish: packs (running prepack) and publishes to npm
+git push --follow-tags
+```
+
+The first release is already at `0.0.1` with its entry in `packages/goist/CHANGELOG.md`, so publish it with `pnpm release` without adding a changeset. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goist-<version>.tgz` without publishing.
+
+`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2` (likewise for Goist Mono), so publishing always ships the committed fonts.
 
 ## Adding a family
 

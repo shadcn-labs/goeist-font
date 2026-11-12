@@ -31,7 +31,7 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
-from families import FAMILIES
+from families import FAMILIES, FONT_VERSION_STRING
 from rounding import MANUFACTURER
 
 SCHEMA = 1
@@ -466,8 +466,8 @@ def audit_naming(audit, key, data):
                 attribution["13"])
     family = names["16"] or names["1"]
     audit.check(f"naming:{key}:family", bool(family) and all(n == audit.family.name for n in family), family)
-    audit.check(f"naming:{key}:derivative-version", abs(data["version"] - 1.0) < 0.0001,
-                data["version"])
+    audit.check(f"naming:{key}:derivative-version",
+                abs(data["version"] - float(FONT_VERSION_STRING)) < 0.0001, data["version"])
     audit.check(f"naming:{key}:no-upstream-name", all("Geist" not in value for values in names.values()
                                                    for value in values), names)
     subfamilies = names["17"] or names["2"]

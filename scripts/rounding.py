@@ -22,7 +22,7 @@ from glyphsLib import GSFont
 from glyphsLib.classes import CURVE, LINE, OFFCURVE, GSFeature, GSNode
 import pathops
 
-from families import FAMILIES, SOFT, Family, Profile
+from families import FAMILIES, FONT_VERSION, FONT_VERSION_STRING, SOFT, Family, Profile
 
 EPSILON = 1e-9
 FLATNESS = 0.08
@@ -494,7 +494,7 @@ def layer_stem(layer, masters):
 def rename_metadata(font, family: Family):
     old_family = font.familyName
     font.familyName = family.name
-    font.versionMajor, font.versionMinor = 1, 0
+    font.versionMajor, font.versionMinor = FONT_VERSION
     name_keys = {"familyName", "postscriptFontName", "postscriptFullName", "fileName",
                  "variableFontFamilyName", "variableFontName", "variableFileName",
                  "preferredFamilyName", "Name Table Entry"}
@@ -514,14 +514,14 @@ def rename_metadata(font, family: Family):
         for prop in getattr(owner, "properties", []):
             if prop.key in property_keys:
                 if prop.key == "versionString":
-                    prop.value = "Version 1.000"
+                    prop.value = f"Version {FONT_VERSION_STRING}"
                 elif isinstance(prop.value, str):
                     prop.value = prop.value.replace(old_family, family.name)
                 if prop._localized_values:
                     for language, value in prop._localized_values.items():
                         if isinstance(value, str):
                             prop._localized_values[language] = (
-                                "Version 1.000" if prop.key == "versionString"
+                                f"Version {FONT_VERSION_STRING}" if prop.key == "versionString"
                                 else value.replace(old_family, family.name))
     author_file = Path(__file__).resolve().parent.parent / "AUTHORS.txt"
     author_record = next((line.strip() for line in author_file.read_text(encoding="utf-8").splitlines()
@@ -599,7 +599,7 @@ def round_font(original, family: Family = FAMILIES["Goist"]):
     context = OutlineContext(original)
     masters = measure_stems(original, context, family.profile)
     report = {
-        "family": family.name, "version": "1.000", "upm": original.upm,
+        "family": family.name, "version": FONT_VERSION_STRING, "upm": original.upm,
         "original_family": original.familyName,
         "original_version": f"{original.versionMajor}.{original.versionMinor:03d}",
         "algorithm": "exposed-convex-cubic-fillet-v1", "profile": family.profile.name,
