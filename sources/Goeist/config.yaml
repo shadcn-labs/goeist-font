@@ -1,7 +1,7 @@
 # gftools recipe for Goeist. scripts/build.py supplies `sources` (generated under
 # build/Goeist/sources/) and `outputDir` (a staging directory), so neither is set here.
 familyName: Goeist
-version: '0.001'
+version: '1.000'
 buildVariable: true
 buildStatic: true
 buildTTF: true

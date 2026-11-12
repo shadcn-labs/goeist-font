@@ -35,15 +35,16 @@ test: build baseline
 proof: build
 	set -e; for family in $(FAMILIES); do "$(PYTHON)" scripts/proof.py --family $$family; done
 
-# Optional external QA; failures are never suppressed.
+# Fontspector QA (Google Fonts profile). Every family gets a report; the target
+# still fails if any family fails.
 qa: build
 	command -v fontspector
-	set -e; for family in $(FAMILIES); do \
+	status=0; for family in $(FAMILIES); do \
 		mkdir -p out/$$family/fontspector; \
 		fontspector --profile googlefonts -l warn --full-lists --succinct \
 			--html out/$$family/fontspector/report.html --ghmarkdown out/$$family/fontspector/report.md \
-			fonts/$$family/variable/*.ttf; \
-	done
+			fonts/$$family/variable/*.ttf || status=1; \
+	done; exit $$status
 
 # Stage webfonts into packages/goeist and produce an inspectable npm tarball.
 package: build

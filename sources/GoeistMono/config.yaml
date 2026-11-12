@@ -1,7 +1,7 @@
 # gftools recipe for Goeist Mono. scripts/build.py supplies `sources` (generated under
 # build/GoeistMono/sources/) and `outputDir` (a staging directory), so neither is set here.
 familyName: Goeist Mono
-version: '0.001'
+version: '1.000'
 buildVariable: true
 buildStatic: true
 buildTTF: true

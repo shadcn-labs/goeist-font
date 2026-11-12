@@ -56,7 +56,7 @@ Load `fonts/Goeist/webfonts/goeist.css` or `fonts/GoeistMono/webfonts/goeist-mon
 
 ## Versioning and npm release
 
-Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package `goeist` is versioned (currently `0.0.1`) by [Changesets](https://github.com/changesets/changesets) in `packages/goeist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
+Font versions (currently `1.000`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). Fontspector's Google Fonts profile requires font versions of at least `1.000`. The npm package uses semantic versions (such as `0.0.2`) independently, managed by [Changesets](https://github.com/changesets/changesets) in `packages/goeist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
 
 With every change that should ship, add a changeset describing it:
 
@@ -108,16 +108,18 @@ The transformation maintains corresponding contours and point types across Thin,
 
 `make test` builds a separate unrounded source baseline per family, compares final fonts against it, and runs geometry regressions. The font audit checks glyph and Unicode inventories, advances and line metrics, OpenType layout and HarfBuzz shaping, named and intermediate variable weights, genuine italic/style naming, CFF delivery, and WOFF2 parity. It covers unencoded glyph outlines as well as Unicode-mapped characters. The JSON report retains explicit differences between the source baseline and older official reference binaries; approved upstream drift is listed with its reason in `sources/<Family>/drift-allowlist.json`.
 
-Attribution checks require the designer name to match the first entry in `AUTHORS.txt`, the manufacturer to be Shadcn Labs, the retained upstream copyright, the Vercel Geist Sans or Geist Mono credit with its non-affiliation statement, and OFL licensing.
+Attribution checks require the designer name to match the first entry in `AUTHORS.txt`, the manufacturer to be Shadcn Labs, the OS/2 vendor ID to be Shadcn Labs' `CNLB` rather than Geist's inherited `VRCL`, the retained upstream copyright, the Vercel Geist Sans or Geist Mono credit with its non-affiliation statement, and OFL licensing.
+
+`CNLB` identifies Shadcn Labs as the font vendor; the designer and modification copyright remain Aniket Pawar. The ID is not yet in Microsoft's vendor registry. [Registration is optional](https://learn.microsoft.com/en-us/typography/vendors/register), so Fontspector may warn about the unregistered ID.
 
 **Upstream distinction, Goeist:** the pinned Geist source version is 1.900, whereas its committed reference binaries report 1.800. Both export 975 glyphs and map 728 codepoints. The source corrects an erroneous mapping of U+03C9 (lowercase omega) to the uppercase Omega outline, replacing that alias with U+2126 (ohm sign). Goeist follows this correction; it does not claim a lowercase omega design that Geist never supplied. No glyph outline is removed by this correction.
 
 **Upstream distinction, Goeist Mono:** the pinned Geist Mono source version is 1.900, whereas its reference binaries report 1.700. The source's Italic (400) master has no kerning, while the 1.700 binary kerns at that weight; Goeist Mono follows the source.
 
-Optional additional binary QA, with Fontspector installed separately:
+Fontspector QA (Google Fonts profile), installed separately:
 
 ```sh
 make qa
 ```
 
-Automated checks complement the browser proofs; they do not replace visual review of every glyph or establish testing on every operating system.
+CI runs `make test`, `make qa` and `make proof` for pull requests and main-branch pushes. Main-branch builds publish the proofs, verification reports and Fontspector reports to GitHub Pages at <https://shadcn-labs.github.io/goeist-font/>. These are development pages, separate from the font's marketing page at <https://shadcn-labs.com/font>. Automated checks complement the browser proofs; they do not replace visual review of every glyph or establish testing on every operating system.

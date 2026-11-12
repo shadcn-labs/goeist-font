@@ -32,7 +32,7 @@ from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
 from families import FAMILIES, FONT_VERSION_STRING
-from rounding import MANUFACTURER
+from rounding import MANUFACTURER, VENDOR_ID
 
 SCHEMA = 1
 WEIGHTS = tuple(range(100, 901, 100))
@@ -289,6 +289,7 @@ def snapshot(font, path, include_shaping=True):
         "attribution": {str(i): name_values(font, i) for i in (0, 8, 9, 10, 13)},
         "style_bits": {"fsSelection": os2.fsSelection, "macStyle": font["head"].macStyle,
                        "italicAngle": font["post"].italicAngle},
+        "vendor": os2.achVendID,
         "cmap": {str(cp): names[g] for cp, g in sorted(font.getBestCmap().items())},
         "glyphs": sorted(names.values()),
         "metrics": {"hhea": [hhea.ascent, hhea.descent, hhea.lineGap],
@@ -476,6 +477,7 @@ def audit_naming(audit, key, data):
     bits = data["style_bits"]
     audit.check(f"naming:{key}:style-bits", bool(bits["fsSelection"] & 1) == italic and
                 bool(bits["macStyle"] & 2) == italic and (bits["italicAngle"] != 0) == italic, bits)
+    audit.check(f"naming:{key}:vendor", data["vendor"] == VENDOR_ID, data["vendor"])
     if suffix != "variable":
         weight = int(suffix)
         bold = weight == 700

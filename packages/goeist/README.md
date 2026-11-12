@@ -1,69 +1,147 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png">
+  <img alt="Goeist Sans and Goeist Mono type specimens" src="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png" width="1024" height="521">
+</picture>
+
 # Goeist Sans & Goeist Mono
 
-Goeist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). Goeist Sans is a rounded derivative of [Geist Sans](https://github.com/vercel/geist-font) and Goeist Mono of Geist Mono, both created by Vercel in collaboration with Basement Studio. Each has nine weights (100–900) with genuine italics, as variable and static WOFF2.
+Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist Sans and Geist Mono](https://github.com/vercel/geist-font).
+
+Goeist Sans keeps Geist's proportions and spacing, with softened corners and stroke endings. Goeist Mono is its monospaced partner, rounded as if drawn with one round tool, for code editors, terminals and other text-based interfaces.
+
+### Installation
 
 ```sh
 npm install goeist
 ```
 
-## Next.js
+### Using with Next.js
 
-`GoeistSans` and `GoeistMono` load the upright and italic variable fonts through `next/font/local`.
+`GoeistSans` is exported from `goeist/font/sans` and `GoeistMono` from `goeist/font/mono`. Both are `NextFontWithVariable` instances that load the upright and italic variable fonts through `next/font/local`, so there is nothing else to import. You can learn more by [reading the `next/font` docs](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
 
-```tsx
-// app/layout.tsx
+| Export | Entry point | CSS Variable |
+| --- | --- | --- |
+| `GoeistSans` | `goeist/font/sans` | `--font-goeist-sans` |
+| `GoeistMono` | `goeist/font/mono` | `--font-goeist-mono` |
+| `GoeistSansNonVariable` | `goeist/font/sans-non-variable` | `--font-goeist-sans-non-variable` |
+| `GoeistMonoNonVariable` | `goeist/font/mono-non-variable` | `--font-goeist-mono-non-variable` |
+
+The non-variable exports load 18 static files and are only needed for browsers without variable-font support.
+
+#### App Router
+
+In `app/layout.js`:
+
+```jsx
 import { GoeistSans } from "goeist/font/sans";
-import { GoeistMono } from "goeist/font/mono";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${GoeistSans.variable} ${GoeistMono.variable}`}>
-      <body className={GoeistSans.className}>{children}</body>
+    <html lang="en" className={GoeistSans.className}>
+      <body>{children}</body>
     </html>
   );
 }
 ```
 
-Use the CSS variables to combine them with Tailwind or other fonts:
+#### Pages Router
+
+In `pages/_app.js`:
+
+```jsx
+import { GoeistSans } from "goeist/font/sans";
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <main className={GoeistSans.className}>
+      <Component {...pageProps} />
+    </main>
+  );
+}
+```
+
+If you're using a version of Next.js that's older than 15, then in `next.config.js` or `next.config.mjs` add:
+
+```diff js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
++  transpilePackages: ["goeist"],
+};
+
+export default nextConfig;
+```
+
+#### With Tailwind CSS
+
+Both fonts can be used through CSS variables.
+
+In `app/layout.js`:
+
+```jsx
+import { GoeistSans } from "goeist/font/sans";
+import { GoeistMono } from "goeist/font/mono";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={`${GoeistSans.variable} ${GoeistMono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+##### Tailwind CSS V4
+
+Then in `tailwind.css`:
 
 ```css
-/* Tailwind v4 */
 @theme {
+  /* rest of your theme config */
   --font-sans: var(--font-goeist-sans);
   --font-mono: var(--font-goeist-mono);
 }
 ```
 
-| Export | Entry point | CSS variable |
-| --- | --- | --- |
-| `GoeistSans` | `goeist/font/sans` | `--font-goeist-sans` |
-| `GoeistSansNonVariable` | `goeist/font/sans-non-variable` | `--font-goeist-sans-non-variable` |
-| `GoeistMono` | `goeist/font/mono` | `--font-goeist-mono` |
-| `GoeistMonoNonVariable` | `goeist/font/mono-non-variable` | `--font-goeist-mono-non-variable` |
+##### Tailwind CSS V3
 
-Prefer the variable exports (two files each). The non-variable exports ship 18 static files and are only needed for browsers without variable-font support.
-
-## Plain CSS (Vite, Astro, Remix, …)
+Then in `tailwind.config.js`:
 
 ```js
-import "goeist/sans.css"; // or "goeist/sans-static.css"; never both
-import "goeist/mono.css"; // or "goeist/mono-static.css"; never both
+module.exports = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ["var(--font-goeist-sans)"],
+        mono: ["var(--font-goeist-mono)"],
+      },
+    },
+  },
+};
+```
+
+### Other frameworks
+
+Outside Next.js, import the stylesheet once and use the font family by name:
+
+```js
+import "goeist/sans.css"; // or "goeist/sans-static.css"
+import "goeist/mono.css"; // or "goeist/mono-static.css"
 ```
 
 ```css
 body {
   font-family: "Goeist", sans-serif;
 }
-
-code, pre {
-  font-family: "Goeist Mono", monospace;
-}
 ```
 
-## License
+### License
 
-This Font Software is licensed under the SIL Open Font License, Version 1.1. Goeist's rounded design and modifications are copyright 2026 Aniket-508; the original Geist copyright notices are included in `LICENSE.txt`.
+Copyright 2026 Aniket Pawar. This Font Software is licensed under the SIL Open Font License, Version 1.1. The original Geist copyright notices are included in `LICENSE.txt`.
 
-## Disclaimer
+### Disclaimer
 
-Goeist is an independent project. It is not affiliated with, sponsored by or endorsed by Vercel, Inc., and is not an official Geist release. Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries.
+Goeist is independent, not affiliated with or endorsed by [Vercel](https://vercel.com/geist/brands#usage) or [Dinamo](https://abcdinamo.com/licenses). ABC Diatype is a visual reference only; none of its font data is used.
+
+Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries.

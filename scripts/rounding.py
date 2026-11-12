@@ -30,6 +30,8 @@ FLATNESS = 0.08
 MANUFACTURER = "Shadcn Labs"
 MANUFACTURER_URL = "https://shadcn-labs.com/font"
 DESIGNER_URL = "https://github.com/Aniket-508"
+# OS/2 achVendID for Shadcn Labs (not yet in Microsoft's vendor registry).
+VENDOR_ID = "CNLB"
 
 
 class GeometryError(ValueError):
@@ -545,6 +547,8 @@ def rename_metadata(font, family: Family):
                 prop._localized_values[language] = author if prop.key == "designers" else MANUFACTURER
     font.designerURL = DESIGNER_URL
     font.manufacturerURL = MANUFACTURER_URL
+    # Replace Geist's inherited "VRCL" so Goeist names Shadcn Labs as its vendor.
+    font.properties["vendorID"] = VENDOR_ID
     # Preserve the exact inherited notice (including every localized value).
     notice = f"Copyright 2026 {author} ({family.name} modifications and rounded outlines)"
     copyrights = [prop for prop in font.properties if prop.key == "copyrights"]

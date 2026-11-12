@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 # Every family's font version (head.fontRevision and name ID 5); npm package
 # versions are managed separately by Changesets in packages/goeist.
-FONT_VERSION = (0, 1)
+FONT_VERSION = (1, 0)
 FONT_VERSION_STRING = f"{FONT_VERSION[0]}.{FONT_VERSION[1]:03d}"
 
 
