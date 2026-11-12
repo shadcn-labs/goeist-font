@@ -1,7 +1,7 @@
 {
   "name": "goeist",
   "version": "0.0.1",
-  "description": "Goeist and Goeist Mono, rounded typefaces by Aniket Pawar developed under Shadcn Labs and based on Geist Sans and Geist Mono, for next/font and plain CSS.",
+  "description": "Goeist is Shadcn Labs' font family, including Goeist Sans and Goeist Mono.",
   "type": "module",
   "license": "OFL-1.1",
   "author": "Aniket Pawar <pawaraniket508@gmail.com>",
