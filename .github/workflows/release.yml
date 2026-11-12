@@ -33,8 +33,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Use an npm CLI with trusted publishing (11.5.1+)
-        run: npm install -g npm@latest
+      # Pinned so a new npm major cannot change publish semantics under us.
+      # 12.2.2 is the version that published 0.0.2. Keep >= 11.5.1 for OIDC.
+      - name: Use a pinned npm CLI with trusted publishing (11.5.1+)
+        run: npm install -g npm@12.2.2
       - name: Install Changesets
         run: pnpm install --frozen-lockfile
 
@@ -63,7 +65,9 @@ jobs:
 
       - name: Publish to npm (trusted publishing, with provenance)
         if: steps.version.outputs.publish == 'true'
-        run: npm publish
+        # Provenance is implicit with OIDC, but the flag makes the step fail
+        # loudly if id-token: write is ever dropped from this workflow.
+        run: npm publish --provenance
 
       - name: Create the GitHub Release with font zips
         if: steps.version.outputs.publish == 'true'
