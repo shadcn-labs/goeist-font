@@ -81,6 +81,8 @@ The first release is already at `0.0.1` with its entry in `packages/goist/CHANGE
 
 `prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2` (likewise for Goist Mono), so publishing always ships the committed fonts.
 
+Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goist-v<version>.zip` and `GoistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goist@<version>/assets/goist-mono/goist-mono.css`.
+
 ## Adding a family
 
 1. Vendor the upstream upright and italic `.glyphspackage` sources, reference variable fonts, licenses and a `manifest.json` under `sources/<Family>/upstream/`.

@@ -14,7 +14,7 @@ Goist Mono is the monospaced partner to Goist Sans. Every exposed corner is draw
 
 ### Installation
 
-Download the fonts from [`fonts/Goist/`](fonts/Goist/) and [`fonts/GoistMono/`](fonts/GoistMono/) and install them on your system.
+Download the latest release from the [releases page](https://github.com/shadcn-labs/goist/releases/latest) (or the files in [`fonts/Goist/`](fonts/Goist/) and [`fonts/GoistMono/`](fonts/GoistMono/)) and install the fonts on your system.
 
 **Via npm package:**
 
@@ -30,6 +30,15 @@ import "goist/mono.css";
 ```
 
 See the [package README](packages/goist/README.md) for Tailwind, static fonts and CSS variables. The specimen lives at [shadcn-labs.com/font](https://shadcn-labs.com/font).
+
+**Via CDN:**
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goist@0.0.1/assets/goist-sans/goist-sans.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goist@0.0.1/assets/goist-mono/goist-mono.css">
+```
+
+Then use `font-family: "Goist"` and `font-family: "Goist Mono"`.
 
 ### Inspiration
 
