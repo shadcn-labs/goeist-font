@@ -1,19 +1,19 @@
 import localFont from "next/font/local";
 
-export const GoistMono = localFont({
+export const GoeistMono = localFont({
   src: [
     {
-      path: "../assets/goist-mono/GoistMono-Variable.woff2",
+      path: "../assets/goeist-mono/GoeistMono-Variable.woff2",
       weight: "100 900",
       style: "normal",
     },
     {
-      path: "../assets/goist-mono/GoistMono-Italic-Variable.woff2",
+      path: "../assets/goeist-mono/GoeistMono-Italic-Variable.woff2",
       weight: "100 900",
       style: "italic",
     },
   ],
-  variable: "--font-goist-mono",
+  variable: "--font-goeist-mono",
   adjustFontFallback: false,
   fallback: [
     "ui-monospace",

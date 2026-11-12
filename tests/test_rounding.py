@@ -177,7 +177,7 @@ class RoundedGeometryTests(unittest.TestCase):
                                              tangent(right.segments[index].points)), 0, places=8)
 
     def test_curved_terminal_keeps_a_real_fillet_inside_exact_ink(self):
-        source = Path(__file__).resolve().parents[1] / "sources/Goist/upstream/Geist.glyphspackage"
+        source = Path(__file__).resolve().parents[1] / "sources/Goeist/upstream/Geist.glyphspackage"
         font = GSFont(source)
         glyph = font.glyphs["C"]
         layer = glyph.layers[font.masters[0].id]
@@ -194,9 +194,9 @@ class RoundedGeometryTests(unittest.TestCase):
         font = source_font()
         original_counter = [point(n) for n in font.glyphs["O"].layers["Thin"].paths[1].nodes]
         rounded, report = round_font(font)
-        self.assertEqual(rounded.familyName, "Goist")
+        self.assertEqual(rounded.familyName, "Goeist")
         self.assertEqual((rounded.versionMajor, rounded.versionMinor), FONT_VERSION)
-        self.assertEqual(rounded.instances[0].customParameters["fileName"], "Goist-Regular")
+        self.assertEqual(rounded.instances[0].customParameters["fileName"], "Goeist-Regular")
         self.assertEqual(rounded.features[0].code, font.features[0].code)
         self.assertEqual(rounded.kerning, font.kerning)
         self.assertEqual([point(n) for n in rounded.glyphs["O"].layers["Thin"].paths[1].nodes],
@@ -254,11 +254,11 @@ class RoundedGeometryTests(unittest.TestCase):
     def test_serialized_source_retains_fractional_geometry_and_features(self):
         rounded, _ = round_font(source_font())
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "Goist.glyphs"
+            path = Path(directory) / "Goeist.glyphs"
             rounded.save(path)
             with path.open(encoding="utf-8") as stream:
                 reopened = load(stream)
-        self.assertEqual(reopened.familyName, "Goist")
+        self.assertEqual(reopened.familyName, "Goeist")
         self.assertEqual(reopened.features[0].code, "sub H by O;")
         for before, after in zip(rounded.glyphs["H"].layers["Thin"].paths[0].nodes,
                                  reopened.glyphs["H"].layers["Thin"].paths[0].nodes):
@@ -273,7 +273,7 @@ class RoundedGeometryTests(unittest.TestCase):
         font.instances[0].customParameters["fileName"] = "Geist[wght]"
         rounded, _ = round_font(font)
         self.assertEqual(rounded.instances[0].customParameters["fileName"],
-                         "Goist-Italic[wght]")
+                         "Goeist-Italic[wght]")
         self.assertEqual(font.instances[0].customParameters["fileName"], "Geist[wght]")
 
     def test_round_nib_profile_fully_rounds_acute_apex(self):
@@ -285,12 +285,12 @@ class RoundedGeometryTests(unittest.TestCase):
             self.assertEqual(exceptions, [])
             return corners[5].radius
 
-        self.assertAlmostEqual(apex_radius(FAMILIES["Goist"].profile), 40 * 0.22)
-        self.assertAlmostEqual(apex_radius(FAMILIES["GoistMono"].profile), 40 * 0.52)
+        self.assertAlmostEqual(apex_radius(FAMILIES["Goeist"].profile), 40 * 0.22)
+        self.assertAlmostEqual(apex_radius(FAMILIES["GoeistMono"].profile), 40 * 0.52)
 
     def test_round_nib_stroke_end_is_circular_not_elliptical(self):
         contour = Contour(rectangle(width=40, height=400))
-        corners, _, _ = prepare_corners(contour, [contour.polygon()], 40, FAMILIES["GoistMono"].profile)
+        corners, _, _ = prepare_corners(contour, [contour.polygon()], 40, FAMILIES["GoeistMono"].profile)
         corner = corners[0]  # bottom-left: short bottom edge limits the trim
         start, end = corner.curve[0], corner.curve[-1]
         self.assertAlmostEqual(math.dist(start, (0, 0)), math.dist(end, (0, 0)), places=6)
@@ -302,8 +302,8 @@ class RoundedGeometryTests(unittest.TestCase):
             corners, _, _ = prepare_corners(contour, [contour.polygon()], 32, profile)
             return {round(corner.radius, 6) for corner in corners.values()}
 
-        self.assertEqual(dot_radii(FAMILIES["GoistMono"].profile), {80 * 0.48})
-        self.assertEqual(dot_radii(FAMILIES["Goist"].profile), {round(32 * 0.52, 6)})
+        self.assertEqual(dot_radii(FAMILIES["GoeistMono"].profile), {80 * 0.48})
+        self.assertEqual(dot_radii(FAMILIES["Goeist"].profile), {round(32 * 0.52, 6)})
 
     def test_box_drawing_keeps_exact_cell_edge_geometry(self):
         font = source_font()
@@ -316,7 +316,7 @@ class RoundedGeometryTests(unittest.TestCase):
             layer.paths.append(rectangle(600, 60, 0, 300))
             glyph.layers.append(layer)
         font.glyphs.append(glyph)
-        mono = dataclasses.replace(FAMILIES["GoistMono"], automatic_ligatures=False)
+        mono = dataclasses.replace(FAMILIES["GoeistMono"], automatic_ligatures=False)
         rounded, report = round_font(font, mono)
         self.assertEqual([point(n) for n in rounded.glyphs["lightHorizontal"].layers["Regular"].paths[0].nodes],
                          [(0, 300), (600, 300), (600, 360), (0, 360)])

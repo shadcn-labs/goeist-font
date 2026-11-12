@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a Goist family from vendored, editable sources.
+"""Build a Goeist family from vendored, editable sources.
 
 Each family (see families.py) owns sources/<Family>/, build/<Family>/ and
 fonts/<Family>/. Compilation happens in a private staging directory. Existing
@@ -337,7 +337,7 @@ def rounded(family: Family, config: dict, state: dict, env: dict, jobs: int, for
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
+    parser.add_argument("--family", default="Goeist", choices=sorted(FAMILIES))
     parser.add_argument("--baseline", action="store_true", help="Build only the unrounded source baseline")
     parser.add_argument("--force", action="store_true", help="Rebuild even when content hashes match")
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 1, 4))
@@ -368,5 +368,5 @@ if __name__ == "__main__":
     try:
         main()
     except (OSError, RuntimeError, ValueError, TAError, subprocess.CalledProcessError) as error:
-        print(f"Goist build failed: {error}", file=sys.stderr)
+        print(f"Goeist build failed: {error}", file=sys.stderr)
         raise SystemExit(1) from error

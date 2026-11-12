@@ -1,8 +1,0 @@
-{
-  "approved": [
-    "drift:italic:400:GPOS:lost-features"
-  ],
-  "reasons": {
-    "drift:italic:400:GPOS:lost-features": "Upstream source drift: the pinned GeistMono-Italic source has no kerning in its Italic (400) master, while the 1.700 release binary kerns at 400. Goist Mono follows the source and does not invent kerning."
-  }
-}

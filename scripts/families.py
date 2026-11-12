@@ -1,4 +1,4 @@
-"""The Goist families built from this repository, keyed by directory name.
+"""The Goeist families built from this repository, keyed by directory name.
 
 Each family owns sources/<key>/, build/<key>/, fonts/<key>/ and out/<key>/.
 """
@@ -30,18 +30,18 @@ class Profile:
     stadium: float | None = None
 
 
-# Goist: soft terminals with restrained acute joins.
+# Goeist: soft terminals with restrained acute joins.
 SOFT = Profile("soft", terminal=0.52, acute=0.22)
-# Goist Mono: one round tool for every exposed corner, after ABC Diatype
+# Goeist Mono: one round tool for every exposed corner, after ABC Diatype
 # Rounded Mono: semicircular terminals and slabs, round dots, rounded apexes.
 ROUND_NIB = Profile("round-nib", terminal=0.52, acute=0.52, circular=True, stadium=1.5)
 
 
 @dataclass(frozen=True)
 class Family:
-    key: str             # directory and file prefix, e.g. GoistMono
-    name: str            # font family name, e.g. Goist Mono
-    css: str             # webfont stylesheet stem, e.g. goist-mono
+    key: str             # directory and file prefix, e.g. GoeistMono
+    name: str            # font family name, e.g. Goeist Mono
+    css: str             # webfont stylesheet stem, e.g. goeist-mono
     upstream_key: str    # upstream file prefix, e.g. GeistMono
     upstream_name: str   # upstream font family name, e.g. Geist Mono
     upstream_label: str  # credited upstream design, e.g. Geist Mono
@@ -55,11 +55,11 @@ class Family:
 
 FAMILIES = {
     family.key: family for family in (
-        Family("Goist", "Goist", "goist", "Geist", "Geist", "Geist Sans", SOFT),
+        Family("Goeist", "Goeist", "goeist", "Geist", "Geist", "Geist Sans", SOFT),
         # Box drawing and block elements tile across character cells, and
         # geometric shapes are exact pictograms: rounding them breaks
         # connected lines and blocks in terminals.
-        Family("GoistMono", "Goist Mono", "goist-mono", "GeistMono", "Geist Mono", "Geist Mono", ROUND_NIB,
+        Family("GoeistMono", "Goeist Mono", "goeist-mono", "GeistMono", "Geist Mono", "Geist Mono", ROUND_NIB,
                automatic_ligatures=True, exact_geometry=range(0x2500, 0x2600)),
     )
 }

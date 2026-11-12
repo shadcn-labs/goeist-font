@@ -1,15 +1,15 @@
 VENV ?= venv
 PYTHON = $(VENV)/bin/python
 BOOTSTRAP_PYTHON ?= python3
-# Every family in scripts/families.py; override to build one, e.g. FAMILIES=GoistMono.
-FAMILIES ?= Goist GoistMono
+# Every family in scripts/families.py; override to build one, e.g. FAMILIES=GoeistMono.
+FAMILIES ?= Goeist GoeistMono
 
 .DEFAULT_GOAL := help
 .PHONY: help build baseline test proof qa venv package
 
 help:
-	@echo "Goist: make build | make baseline | make test | make proof | make qa | make package"
-	@echo "Families: $(FAMILIES). Override with FAMILIES=GoistMono."
+	@echo "Goeist: make build | make baseline | make test | make proof | make qa | make package"
+	@echo "Families: $(FAMILIES). Override with FAMILIES=GoeistMono."
 	@echo "Fonts: fonts/<family>/; editable sources: build/<family>/sources/; proofs and QA: out/<family>/."
 
 venv: $(VENV)/touchfile

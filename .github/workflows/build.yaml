@@ -1,4 +1,4 @@
-name: Build Goist fonts and proofs
+name: Build Goeist fonts and proofs
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    name: Compile and verify Goist and Goist Mono
+    name: Compile and verify Goeist and Goeist Mono
     runs-on: ubuntu-latest
     env:
       SOURCE_DATE_EPOCH: '1767225600'
@@ -41,7 +41,7 @@ jobs:
       - name: Archive fonts, editable sources, reports and licenses
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: goist-fonts
+          name: goeist-fonts
           if-no-files-found: error
           path: |
             fonts/

@@ -1,20 +1,20 @@
-# Goist Sans & Goist Mono
+# Goeist Sans & Goeist Mono
 
-Goist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). Goist Sans and Goist Mono are rounded derivatives of [Geist Sans and Geist Mono](https://github.com/vercel/geist-font), created by Vercel in collaboration with Basement Studio.
+Goeist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). Goeist Sans and Goeist Mono are rounded derivatives of [Geist Sans and Geist Mono](https://github.com/vercel/geist-font), created by Vercel in collaboration with Basement Studio.
 
-Goist Sans keeps Geist's skeleton, proportions, spacing and OpenType features, and softens exposed corners and stroke endings with stem-relative curves. It is designed for interfaces, body copy and display sizes where Geist's precision should feel a little warmer.
+Goeist Sans keeps Geist's skeleton, proportions, spacing and OpenType features, and softens exposed corners and stroke endings with stem-relative curves. It is designed for interfaces, body copy and display sizes where Geist's precision should feel a little warmer.
 
-Goist Mono is the monospaced partner to Goist Sans. Every exposed corner is drawn as if by one round tool: stroke endings, slabs and dots become semicircles, and apexes are fully rounded, while widths stay fixed. It is designed for code editors, terminals and other text-based interfaces.
+Goeist Mono is the monospaced partner to Goeist Sans. Every exposed corner is drawn as if by one round tool: stroke endings, slabs and dots become semicircles, and apexes are fully rounded, while widths stay fixed. It is designed for code editors, terminals and other text-based interfaces.
 
 - Nine weights, Thin (100) to Black (900), with genuine italics, in both families.
 - Upright and italic variable fonts, plus static TTF, OTF and WOFF2.
-- Goist Sans: 975 exported glyphs per style, eleven stylistic sets (`ss01`–`ss11`), fractions, numeral variants, kerning and mark positioning.
-- Goist Mono: 1,158 upright and 1,147 italic glyphs, coding ligatures (`->`, `=>`, `!=`, `===`, …), stylistic sets and fractions.
+- Goeist Sans: 975 exported glyphs per style, eleven stylistic sets (`ss01`–`ss11`), fractions, numeral variants, kerning and mark positioning.
+- Goeist Mono: 1,158 upright and 1,147 italic glyphs, coding ligatures (`->`, `=>`, `!=`, `===`, …), stylistic sets and fractions.
 - Latin, extended Latin, Vietnamese and Cyrillic coverage.
 
 ### Installation
 
-Download the latest release from the [releases page](https://github.com/shadcn-labs/goeist/releases/latest) (or the files in [`fonts/Goist/`](fonts/Goist/) and [`fonts/GoistMono/`](fonts/GoistMono/)) and install the fonts on your system.
+Download the latest release from the [releases page](https://github.com/shadcn-labs/goeist/releases/latest) (or the files in [`fonts/Goeist/`](fonts/Goeist/) and [`fonts/GoeistMono/`](fonts/GoeistMono/)) and install the fonts on your system.
 
 **Via npm package:**
 
@@ -23,8 +23,8 @@ npm i goeist
 ```
 
 ```js
-import { GoistSans } from "goeist/font/sans"; // Next.js (next/font)
-import { GoistMono } from "goeist/font/mono";
+import { GoeistSans } from "goeist/font/sans"; // Next.js (next/font)
+import { GoeistMono } from "goeist/font/mono";
 import "goeist/sans.css";                     // any other bundler
 import "goeist/mono.css";
 ```
@@ -34,33 +34,33 @@ See the [package README](packages/goeist/README.md) for Tailwind, static fonts a
 **Via CDN:**
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goist-sans/goist-sans.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goist-mono/goist-mono.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goeist-sans/goeist-sans.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goeist-mono/goeist-mono.css">
 ```
 
-Then use `font-family: "Goist"` and `font-family: "Goist Mono"`.
+Then use `font-family: "Goeist"` and `font-family: "Goeist Mono"`.
 
 ### Inspiration
 
-Goist is built on the outlines of [Geist Sans and Geist Mono](https://github.com/vercel/geist-font). Goist Sans' rounding was informed by [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans), [Intern](https://github.com/bvvst/intern) and [Open Runde](https://github.com/lauridskern/open-runde). None of these has a monospaced counterpart, so Goist Mono's rounding takes its cue from [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded) by Dinamo. Goist does not use outlines from any of these references. We thank their creators for their craft.
+Goeist is built on the outlines of [Geist Sans and Geist Mono](https://github.com/vercel/geist-font). Goeist Sans' rounding was informed by [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans), [Intern](https://github.com/bvvst/intern) and [Open Runde](https://github.com/lauridskern/open-runde). None of these has a monospaced counterpart, so Goeist Mono's rounding takes its cue from [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded) by Dinamo. Goeist does not use outlines from any of these references. We thank their creators for their craft.
 
 ## Building
 
-- `make build` will produce font files in `fonts/Goist/` and `fonts/GoistMono/`.
+- `make build` will produce font files in `fonts/Goeist/` and `fonts/GoeistMono/`.
 - `make test` will verify the fonts against the unrounded Geist sources and run the geometry tests.
-- `make proof` will generate HTML proofs in `out/Goist/proof/` and `out/GoistMono/proof/`.
+- `make proof` will generate HTML proofs in `out/Goeist/proof/` and `out/GoeistMono/proof/`.
 
-Add `FAMILIES=GoistMono` to any target to work on one family. Requires Python 3.12 and `make`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the build pipeline, verification and npm releases.
+Add `FAMILIES=GoeistMono` to any target to work on one family. Requires Python 3.12 and `make`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the build pipeline, verification and npm releases.
 
 ## License
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at https://openfontlicense.org
 
-Goist's rounded designs and modifications are copyright 2026 Aniket-508. The original Geist copyright and license notices are retained in [`OFL.txt`](OFL.txt) and in each family's `sources/<Family>/upstream/`, and the Geist contributors are credited in [`CONTRIBUTORS.txt`](CONTRIBUTORS.txt).
+Goeist's rounded designs and modifications are copyright 2026 Aniket-508. The original Geist copyright and license notices are retained in [`OFL.txt`](OFL.txt) and in each family's `sources/<Family>/upstream/`, and the Geist contributors are credited in [`CONTRIBUTORS.txt`](CONTRIBUTORS.txt).
 
 ## Disclaimer
 
-Goist is an independent project. It is not affiliated with, sponsored by or endorsed by Vercel, Inc. or Dinamo, and is not an official Geist release. Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries. ABC Diatype Rounded is a typeface by Dinamo; Goist Mono contains none of its outlines or font data.
+Goeist is an independent project. It is not affiliated with, sponsored by or endorsed by Vercel, Inc. or Dinamo, and is not an official Geist release. Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries. ABC Diatype Rounded is a typeface by Dinamo; Goeist Mono contains none of its outlines or font data.
 
 ## Repository Layout
 
@@ -68,8 +68,8 @@ Each family owns one directory under `sources/`, `fonts/`, `build/` and `out/`, 
 
 | Path | Contents |
 | --- | --- |
-| `sources/Goist/`, `sources/GoistMono/` | gftools recipes and vendored upstream Geist Sans and Geist Mono sources |
-| `fonts/Goist/`, `fonts/GoistMono/` | release TTF, OTF, variable and WOFF2 fonts |
+| `sources/Goeist/`, `sources/GoeistMono/` | gftools recipes and vendored upstream Geist Sans and Geist Mono sources |
+| `fonts/Goeist/`, `fonts/GoeistMono/` | release TTF, OTF, variable and WOFF2 fonts |
 | `packages/goeist/` | the `goeist` npm package |
 | `scripts/`, `tests/` | family registry, build driver, rounding geometry, audits, proofs |
 | `build/`, `out/` | generated sources, baselines, reports and proofs (git-ignored) |

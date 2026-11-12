@@ -9,8 +9,8 @@ const repo = join(pkg, "..", "..");
 
 // `css` is the stylesheet stem written by scripts/build.py; `slug` names the package directory.
 const FAMILIES = [
-  { family: "Goist", css: "goist", slug: "goist-sans" },
-  { family: "GoistMono", css: "goist-mono", slug: "goist-mono" },
+  { family: "Goeist", css: "goeist", slug: "goeist-sans" },
+  { family: "GoeistMono", css: "goeist-mono", slug: "goeist-mono" },
 ];
 
 // Bracketed axis names are renamed so bundlers never see `[...]` in asset paths.

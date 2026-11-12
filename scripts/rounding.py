@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build editable Goist family sources with compatible, stem-relative cubic fillets.
+"""Build editable Goeist family sources with compatible, stem-relative cubic fillets.
 
 All geometry is computed in source units, without a Glyphs.app filter. Outlines
 are not overlap-removed: winding tests distinguish exposed ink corners from
@@ -26,7 +26,7 @@ from families import FAMILIES, FONT_VERSION, FONT_VERSION_STRING, SOFT, Family, 
 
 EPSILON = 1e-9
 FLATNESS = 0.08
-# Designer (name ID 9) is the first AUTHORS.txt entry; Goist is developed under Shadcn Labs.
+# Designer (name ID 9) is the first AUTHORS.txt entry; Goeist is developed under Shadcn Labs.
 MANUFACTURER = "Shadcn Labs"
 MANUFACTURER_URL = "https://shadcn-labs.com/font"
 DESIGNER_URL = "https://github.com/Aniket-508"
@@ -528,7 +528,7 @@ def rename_metadata(font, family: Family):
                           if line.strip() and not line.lstrip().startswith("#")), "")
     author = author_record.partition("<")[0].strip()
     if not author:
-        raise GeometryError("AUTHORS.txt must identify the Goist author")
+        raise GeometryError("AUTHORS.txt must identify the Goeist author")
     font.properties["descriptions"] = (
         f"{family.name} by {author}, developed under {MANUFACTURER}. "
         f"Rounded derivative of Vercel {family.upstream_label}. "
@@ -593,7 +593,7 @@ def exact_geometry(glyph, font, codepoints):
     return any(int(code, 16) in codepoints for code in base.unicodes or ())
 
 
-def round_font(original, family: Family = FAMILIES["Goist"]):
+def round_font(original, family: Family = FAMILIES["Goeist"]):
     """Return a deep-copied GSFont plus a machine-readable geometry audit."""
     font = copy.deepcopy(original)
     context = OutlineContext(original)
@@ -699,7 +699,7 @@ def main(argv=None):
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
-    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
+    parser.add_argument("--family", default="Goeist", choices=sorted(FAMILIES))
     args = parser.parse_args(argv)
     try:
         font, report = round_font(GSFont(args.source), FAMILIES[args.family])

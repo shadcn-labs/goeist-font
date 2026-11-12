@@ -1,4 +1,4 @@
-# Contributing to Goist
+# Contributing to Goeist
 
 ## Build
 
@@ -10,7 +10,7 @@ make test
 make proof
 ```
 
-Every target runs for each family in `scripts/families.py` (`Goist`, `GoistMono`); `make build FAMILIES=GoistMono` limits it to one. The scripts take the same key: `venv/bin/python scripts/build.py --family GoistMono`. Paths below use `<Family>`.
+Every target runs for each family in `scripts/families.py` (`Goeist`, `GoeistMono`); `make build FAMILIES=GoeistMono` limits it to one. The scripts take the same key: `venv/bin/python scripts/build.py --family GoeistMono`. Paths below use `<Family>`.
 
 | Output | Location |
 | --- | --- |
@@ -32,7 +32,7 @@ Static advances are taken from the corresponding variable-font location before h
 Build manifests hash every upstream package file, build configuration, geometry code and compiler versions. Changed or missing outputs invalidate the cache. `SOURCE_DATE_EPOCH` controls binary timestamps; the default is fixed. To force exports or limit compiler concurrency:
 
 ```sh
-venv/bin/python scripts/build.py --family Goist --force --jobs 4
+venv/bin/python scripts/build.py --family Goeist --force --jobs 4
 ```
 
 ## Preview
@@ -43,20 +43,20 @@ Serve the repository root, not just the proof directory:
 python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-Open <http://127.0.0.1:8765/out/Goist/proof/> or <http://127.0.0.1:8765/out/GoistMono/proof/>. Each specimen provides weight, size, italic and OpenType controls, original-versus-rounded text, small-size waterfalls, a code sample, and 24 complete outline atlases. Unencoded glyphs are shown directly as SVG outlines. Unsupported characters receive explicit codepoint labels rather than silently appearing in a fallback font. All assets are local.
+Open <http://127.0.0.1:8765/out/Goeist/proof/> or <http://127.0.0.1:8765/out/GoeistMono/proof/>. Each specimen provides weight, size, italic and OpenType controls, original-versus-rounded text, small-size waterfalls, a code sample, and 24 complete outline atlases. Unencoded glyphs are shown directly as SVG outlines. Unsupported characters receive explicit codepoint labels rather than silently appearing in a fallback font. All assets are local.
 
 ## Web use without npm
 
-Load `fonts/Goist/webfonts/goist.css` or `fonts/GoistMono/webfonts/goist-mono.css` and keep its sibling WOFF2 files alongside it. Use the matching `-static.css` instead for individual static webfonts; do not load both.
+Load `fonts/Goeist/webfonts/goeist.css` or `fonts/GoeistMono/webfonts/goeist-mono.css` and keep its sibling WOFF2 files alongside it. Use the matching `-static.css` instead for individual static webfonts; do not load both.
 
 ```html
-<link rel="stylesheet" href="/fonts/Goist/webfonts/goist.css">
-<link rel="stylesheet" href="/fonts/GoistMono/webfonts/goist-mono.css">
+<link rel="stylesheet" href="/fonts/Goeist/webfonts/goeist.css">
+<link rel="stylesheet" href="/fonts/GoeistMono/webfonts/goeist-mono.css">
 ```
 
 ## Versioning and npm release
 
-Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package, published as `goeist` (npm blocks the unscoped name `goist` as too similar to `got` and `plist`), is versioned (currently `0.0.1`) by [Changesets](https://github.com/changesets/changesets) in `packages/goeist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
+Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package `goeist` is versioned (currently `0.0.1`) by [Changesets](https://github.com/changesets/changesets) in `packages/goeist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
 
 With every change that should ship, add a changeset describing it:
 
@@ -81,9 +81,9 @@ git push --follow-tags
 
 The first release is already at `0.0.1` with its entry in `packages/goeist/CHANGELOG.md`, so publish it without adding a changeset. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goeist-<version>.tgz` without publishing.
 
-`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2` (likewise for Goist Mono), so publishing always ships the committed fonts.
+`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goeist[wght].woff2` to `Goeist-Variable.woff2` (likewise for Goeist Mono), so publishing always ships the committed fonts.
 
-Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goist-v<version>.zip` and `GoistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goeist@<version>/assets/goist-mono/goist-mono.css`.
+Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goeist-v<version>.zip` and `GoeistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goeist@<version>/assets/goeist-mono/goeist-mono.css`.
 
 ## Adding a family
 
@@ -102,14 +102,14 @@ Fillet radii come from each family's profile in `scripts/families.py`, as multip
 
 | Profile | Family | Squared ends and outer corners | Acute apexes and diagonal cuts | Arcs | Convex straight contours |
 | --- | --- | --- | --- | --- | --- |
-| `soft` | Goist | 0.52 | 0.22 | trimmed independently per edge | as other corners |
-| `round-nib` | Goist Mono | 0.52 | 0.52 | always circular | stadium, half width ≤ 1.5 |
+| `soft` | Goeist | 0.52 | 0.22 | trimmed independently per edge | as other corners |
+| `round-nib` | Goeist Mono | 0.52 | 0.52 | always circular | stadium, half width ≤ 1.5 |
 
 `round-nib` follows ABC Diatype Rounded Mono's "one chunky tool" construction. Every fillet is a circular arc: where a short edge limits the trim, the radius shrinks so both sides trim equally, so slab and stroke ends become semicircles rather than ellipses. Straight-edged convex contours (dots, bars, slashes, commas) become stadiums and circles, with a radius of half their width up to 1.5 stems, so dots wider than the stem are still round.
 
-In Goist Mono, box drawing, block elements and geometric shapes (U+2500–U+25FF) keep their exact upstream geometry: they tile across character cells, and rounding them would break connected lines and blocks in terminals.
+In Goeist Mono, box drawing, block elements and geometric shapes (U+2500–U+25FF) keep their exact upstream geometry: they tile across character cells, and rounding them would break connected lines and blocks in terminals.
 
-Geist Mono's sources contain 69 exported coding-ligature glyphs (`hyphen_greater.liga`, …) but no `liga` feature: Glyphs.app derives it from glyph names at export and glyphsLib cannot. For Goist Mono, `add_automatic_ligatures` recreates that feature, longest sequence first, identically in the unrounded baseline and the rounded source.
+Geist Mono's sources contain 69 exported coding-ligature glyphs (`hyphen_greater.liga`, …) but no `liga` feature: Glyphs.app derives it from glyph names at export and glyphsLib cannot. For Goeist Mono, `add_automatic_ligatures` recreates that feature, longest sequence first, identically in the unrounded baseline and the rounded source.
 
 The transformation maintains corresponding contours and point types across Thin, Regular and Black masters, including the `f` intermediate layer at weight 801. Unmoved support cubics preserve correspondence where a corner is only exposed in some masters. Components, anchors, advances, kerning and feature definitions remain in the sources. Non-exporting helper glyphs and backup layers are retained. Geometry errors are explicit failures, not silent glyph reversions.
 
@@ -119,9 +119,9 @@ The transformation maintains corresponding contours and point types across Thin,
 
 Attribution checks require the designer name to match the first entry in `AUTHORS.txt`, the manufacturer to be Shadcn Labs, the retained upstream copyright, the Vercel Geist Sans or Geist Mono credit with its non-affiliation statement, and OFL licensing.
 
-**Upstream distinction, Goist:** the pinned Geist source version is 1.900, whereas its committed reference binaries report 1.800. Both export 975 glyphs and map 728 codepoints. The source corrects an erroneous mapping of U+03C9 (lowercase omega) to the uppercase Omega outline, replacing that alias with U+2126 (ohm sign). Goist follows this correction; it does not claim a lowercase omega design that Geist never supplied. No glyph outline is removed by this correction.
+**Upstream distinction, Goeist:** the pinned Geist source version is 1.900, whereas its committed reference binaries report 1.800. Both export 975 glyphs and map 728 codepoints. The source corrects an erroneous mapping of U+03C9 (lowercase omega) to the uppercase Omega outline, replacing that alias with U+2126 (ohm sign). Goeist follows this correction; it does not claim a lowercase omega design that Geist never supplied. No glyph outline is removed by this correction.
 
-**Upstream distinction, Goist Mono:** the pinned Geist Mono source version is 1.900, whereas its reference binaries report 1.700. The source's Italic (400) master has no kerning, while the 1.700 binary kerns at that weight; Goist Mono follows the source.
+**Upstream distinction, Goeist Mono:** the pinned Geist Mono source version is 1.900, whereas its reference binaries report 1.700. The source's Italic (400) master has no kerning, while the 1.700 binary kerns at that weight; Goeist Mono follows the source.
 
 Optional additional binary QA, with Fontspector installed separately:
 

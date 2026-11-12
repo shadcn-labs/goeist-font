@@ -1,7 +1,7 @@
 {
   "name": "goeist",
   "version": "0.0.1",
-  "description": "Goist and Goist Mono, rounded typefaces by Aniket-508 developed under Shadcn Labs and based on Geist Sans and Geist Mono, for next/font and plain CSS.",
+  "description": "Goeist and Goeist Mono, rounded typefaces by Aniket-508 developed under Shadcn Labs and based on Geist Sans and Geist Mono, for next/font and plain CSS.",
   "type": "module",
   "license": "OFL-1.1",
   "author": "Aniket-508 <pawaraniket508@gmail.com>",
@@ -16,7 +16,6 @@
   },
   "keywords": [
     "goeist",
-    "goist",
     "font",
     "typeface",
     "monospace",
@@ -43,10 +42,10 @@
       "types": "./font/mono-non-variable.d.ts",
       "default": "./font/mono-non-variable.js"
     },
-    "./sans.css": "./assets/goist-sans/goist-sans.css",
-    "./sans-static.css": "./assets/goist-sans/goist-sans-static.css",
-    "./mono.css": "./assets/goist-mono/goist-mono.css",
-    "./mono-static.css": "./assets/goist-mono/goist-mono-static.css",
+    "./sans.css": "./assets/goeist-sans/goeist-sans.css",
+    "./sans-static.css": "./assets/goeist-sans/goeist-sans-static.css",
+    "./mono.css": "./assets/goeist-mono/goeist-mono.css",
+    "./mono-static.css": "./assets/goeist-mono/goeist-mono-static.css",
     "./package.json": "./package.json"
   },
   "files": [

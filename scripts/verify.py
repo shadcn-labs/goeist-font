@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Audit a Goist family build, source/release drift, shaping, and delivery formats.
+"""Audit a Goeist family build, source/release drift, shaping, and delivery formats.
 
 Verify the deliverables against the unrounded source build (`make baseline`):
-  python scripts/verify.py --family GoistMono
+  python scripts/verify.py --family GoeistMono
 Paths default to fonts/<family>, sources/<family>/upstream/reference,
 build/<family>/baseline and out/<family>/verification.json.
 
@@ -345,7 +345,7 @@ class Audit:
                               if line.strip() and not line.lstrip().startswith("#")), "")
         self.author = author_record.partition("<")[0].strip()
         if not self.author:
-            raise ValueError("AUTHORS.txt must identify the Goist author")
+            raise ValueError("AUTHORS.txt must identify the Goeist author")
 
     def check(self, key, success, detail=None):
         self.checks.append({"id": key, "ok": bool(success), "detail": detail})
@@ -543,7 +543,7 @@ def audit_delivery(audit, root, baseline):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
+    parser.add_argument("--family", default="Goeist", choices=sorted(FAMILIES))
     parser.add_argument("--fonts", type=Path, help="default: fonts/<family>")
     parser.add_argument("--reference", type=Path, help="default: sources/<family>/upstream/reference")
     parser.add_argument("--source-baseline", type=Path, help="default: build/<family>/baseline")
