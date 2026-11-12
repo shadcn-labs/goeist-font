@@ -60,8 +60,7 @@
     "build": "node scripts/stage-assets.mjs",
     "prepack": "node scripts/stage-assets.mjs",
     "changeset": "changeset",
-    "version": "changeset version",
-    "release": "changeset publish"
+    "version": "changeset version"
   },
   "peerDependencies": {
     "next": ">=13.2.0"

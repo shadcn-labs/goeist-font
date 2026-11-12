@@ -66,24 +66,15 @@ pnpm install
 pnpm changeset          # pick patch / minor / major and write the summary
 ```
 
-To release:
+Releases are automated by `.github/workflows/release.yaml`, which is registered as the npm trusted publisher for `goeist`:
 
-```sh
-make build                       # from the repository root; commit fonts/
-cd packages/goeist
-pnpm run version                 # apply changesets: bump package.json, update CHANGELOG.md
-git commit -am "Version packages" && git push
-pnpm release                     # changeset publish: packs (running prepack) and publishes to npm
-git push --follow-tags
-```
+1. Commit the rebuilt `fonts/` (`make build`) and a changeset, and push or merge to `main`.
+2. The workflow opens or updates a **Version packages** pull request that bumps `package.json` and `CHANGELOG.md`.
+3. Merging it publishes the new version to npm through OIDC (no token, with provenance) and creates the GitHub Release `v<version>` with `Goeist-v<version>.zip`, `GoeistMono-v<version>.zip` (committed fonts plus licenses) and that version's changelog notes.
 
-`changeset publish` runs npm non-interactively, so an account secured with a passkey or security key fails with `EOTP`. Until trusted publishing is configured, publish from a terminal with `npm publish` in `packages/goeist` (approve the browser prompt), then tag and push: `git tag v<version> && git push origin v<version>`.
+Pushes without changesets publish nothing: the workflow skips versions already on npm. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goeist-<version>.tgz` without publishing.
 
-The first release is already at `0.0.1` with its entry in `packages/goeist/CHANGELOG.md`, so publish it without adding a changeset. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goeist-<version>.tgz` without publishing.
-
-`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goeist[wght].woff2` to `Goeist-Variable.woff2` (likewise for Goeist Mono), so publishing always ships the committed fonts.
-
-Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goeist-v<version>.zip` and `GoeistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goeist@<version>/assets/goeist-mono/goeist-mono.css`.
+`prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goeist[wght].woff2` to `Goeist-Variable.woff2` (likewise for Goeist Mono), so publishing always ships the committed fonts. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goeist@<version>/assets/goeist-mono/goeist-mono.css`.
 
 ## Adding a family
 
