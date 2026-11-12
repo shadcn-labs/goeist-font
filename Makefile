@@ -1,61 +1,49 @@
-SOURCES=$(shell python3 scripts/read-config.py --sources )
-FAMILY=$(shell python3 scripts/read-config.py --family )
-DRAWBOT_SCRIPTS=$(shell ls documentation/*.py)
-DRAWBOT_OUTPUT=$(shell ls documentation/*.py | sed 's/\.py/.png/g')
+VENV ?= venv
+PYTHON = $(VENV)/bin/python
+BOOTSTRAP_PYTHON ?= python3
+FAMILY = Goist
+
+.DEFAULT_GOAL := help
+.PHONY: help build baseline test proof qa venv package
 
 help:
-	@echo "###"
-	@echo "# Build targets for $(FAMILY)"
-	@echo "###"
-	@echo
-	@echo "  make build:  Builds the fonts and places them in the fonts/ directory"
-	@echo "  make test:   Tests the fonts with fontspector"
-	@echo "  make proof:  Creates HTML proof documents in the proof/ directory"
-	@echo "  make images: Creates PNG specimen images in the documentation/ directory"
-	@echo
+	@echo "Goist: make build | make baseline | make test | make proof | make qa | make package"
+	@echo "Fonts: fonts/$(FAMILY)/; editable sources: build/$(FAMILY)/sources/; proofs and QA: out/$(FAMILY)/."
+	@echo "Offline rebuilds use the vendored sources and an already installed venv."
 
-build: build.stamp
+venv: $(VENV)/touchfile
 
-venv: venv/touchfile
+$(VENV)/touchfile: requirements.txt requirements.in
+	test -d "$(VENV)" || $(BOOTSTRAP_PYTHON) -m venv "$(VENV)"
+	"$(PYTHON)" -m pip install -r requirements.txt
+	touch "$@"
 
-customize: venv
-	. venv/bin/activate; python3 scripts/customize.py
+# Always run the content-hash driver: every file inside either glyphspackage,
+# configuration, scripts and compiler versions participates in cache invalidation.
+# This also restores a deleted or modified artifact instead of trusting a stamp.
+build: venv
+	"$(PYTHON)" scripts/build.py
 
-build.stamp: venv sources/config.yaml $(SOURCES)
-	rm -rf fonts
-	(for config in sources/config*.yaml; do . venv/bin/activate; gftools builder $$config; done)  && touch build.stamp
+baseline: venv
+	"$(PYTHON)" scripts/build.py --baseline
 
-venv/touchfile: requirements.txt
-	test -d venv || python3 -m venv venv
-	. venv/bin/activate; pip install -Ur requirements.txt
-	touch venv/touchfile
+test: build baseline
+	"$(PYTHON)" scripts/verify.py --fonts fonts/$(FAMILY) --reference sources/$(FAMILY)/upstream/reference \
+		--source-baseline build/$(FAMILY)/baseline --output out/$(FAMILY)/verification.json
+	"$(PYTHON)" -m unittest discover -s tests -v
 
-test: build.stamp
-	which fontspector || (echo "fontspector not found. Please install it with 'cargo binstall fontspector'." && exit 1)
-	TOCHECK=$$(find fonts/variable -type f 2>/dev/null); if [ -z "$$TOCHECK" ]; then TOCHECK=$$(find fonts/ttf -type f 2>/dev/null); fi ; mkdir -p out/ out/fontspector; fontspector --profile googlefonts -l warn --full-lists --succinct --html out/fontspector/fontspector-report.html --ghmarkdown out/fontspector/fontspector-report.md --badges out/badges $$TOCHECK  || echo '::warning file=sources/config.yaml,title=fontspector failures::The fontspector QA check reported errors in your font. Please check the generated report.'
+proof: build
+	"$(PYTHON)" scripts/proof.py --fonts fonts/$(FAMILY) --reference sources/$(FAMILY)/upstream/reference \
+		--output out/$(FAMILY)/proof
 
-proof: venv build.stamp
-	which diff3proof || (echo "diff3proof not found. Please install it with 'cargo binstall diffenator3'." && exit 1)
-	TOCHECK=$$(find fonts/variable -type f 2>/dev/null); if [ -z "$$TOCHECK" ]; then TOCHECK=$$(find fonts/ttf -type f 2>/dev/null); fi ; . venv/bin/activate; mkdir -p out/ out/proof; diff3proof $$TOCHECK --output out/proof
+# Optional external QA; failures are never suppressed.
+qa: build
+	command -v fontspector
+	mkdir -p out/$(FAMILY)/fontspector
+	fontspector --profile googlefonts -l warn --full-lists --succinct \
+		--html out/$(FAMILY)/fontspector/report.html --ghmarkdown out/$(FAMILY)/fontspector/report.md \
+		fonts/$(FAMILY)/variable/*.ttf
 
-images: venv $(DRAWBOT_OUTPUT)
-
-%.png: %.py build.stamp
-	. venv/bin/activate; python3 $< --output $@
-
-clean:
-	rm -rf venv
-	find . -name "*.pyc" -delete
-
-update-project-template:
-	npx update-template https://github.com/googlefonts/googlefonts-project-template/
-
-update: venv
-	venv/bin/pip install --upgrade pip-tools
-	# See https://pip-tools.readthedocs.io/en/latest/#a-note-on-resolvers for
-	# the `--resolver` flag below.
-	venv/bin/pip-compile --upgrade --verbose --resolver=backtracking requirements.in
-	venv/bin/pip-sync requirements.txt
-
-	git commit -m "Update requirements" requirements.txt
-	git push
+# Stage webfonts into packages/goist and produce an inspectable npm tarball.
+package: build
+	cd packages/goist && npm pack

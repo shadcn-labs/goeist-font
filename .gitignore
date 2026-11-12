@@ -1,41 +1,25 @@
-*~
-venv
-venv-test
-build.stamp
-proof
-fonts
-node_modules
-package-lock.json
-package.json
-master_ufo
-instance_ufos
-subset-files
-.ninja_log
-build.ninja
+# Python toolchain
+/venv/
+__pycache__/
+*.py[cod]
 
-# OS generated files #
-######################
+# Font build intermediates and reports (fonts/ is committed release output)
+/build/
+/out/
+
+# Node / npm package
+node_modules/
+*.tgz
+/packages/goist/assets/
+/packages/goist/LICENSE.txt
+
+# Editors and OS
 .DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+.idea/
+.vscode/
+*~
+*.swp
 
-# Autosaved by application when editing
-######################
-*(تم الحفظ تلقائيًا).*
-*(automaticky uloženo).*
-*(Automatisch gesichert).*
+# Glyphs.app autosaves
 *(Autosaved).*
-*(guardado automáticamente).*
-*(enregistré automatiquement).*
-*(salvato automaticamente).*
-*（自動保存）.*
-*(자동 저장됨).*
-*(Salvo Automaticamente).*
-*(Автосохранение).*
-*(Otomatik Kaydedildi).*
-*（自动存储）.*
-*（已自動儲存）.*

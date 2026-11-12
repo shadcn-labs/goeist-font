@@ -1,0 +1,60 @@
+{
+  "name": "goist",
+  "version": "1.0.0",
+  "description": "Goist, a rounded typeface based on Vercel Geist Sans, for next/font and plain CSS.",
+  "type": "module",
+  "license": "OFL-1.1",
+  "author": "Aniket-508 <pawaraniket508@gmail.com>",
+  "homepage": "https://shadcn-labs.com/font",
+  "bugs": {
+    "url": "https://github.com/shadcn-labs/goist/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shadcn-labs/goist.git",
+    "directory": "packages/goist"
+  },
+  "keywords": [
+    "goist",
+    "font",
+    "typeface",
+    "rounded",
+    "geist",
+    "next/font",
+    "variable font",
+    "woff2"
+  ],
+  "exports": {
+    "./font/sans": {
+      "types": "./font/sans.d.ts",
+      "default": "./font/sans.js"
+    },
+    "./font/sans-non-variable": {
+      "types": "./font/sans-non-variable.d.ts",
+      "default": "./font/sans-non-variable.js"
+    },
+    "./sans.css": "./assets/goist-sans/goist-sans.css",
+    "./sans-static.css": "./assets/goist-sans/goist-sans-static.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "font",
+    "assets",
+    "LICENSE.txt"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "node scripts/stage-assets.mjs",
+    "prepack": "node scripts/stage-assets.mjs"
+  },
+  "peerDependencies": {
+    "next": ">=13.2.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  }
+}

@@ -1,101 +1,156 @@
-## Setting up your font
+# Goist
 
-### New repositories
+A rounded typeface by **Aniket-508**, based on **Vercel Geist Sans**. Goist keeps Geist's skeleton and typography while softening exposed corners and stroke endings.
 
-1. Hit the green button above ("Use this template") to create your own repository.
+- Nine weights, 100–900, in upright and genuine italic styles.
+- Separate upright and italic weight-variable fonts.
+- All 975 exported glyphs per style, including unencoded alternates, ligatures and combining marks.
+- Latin, extended Latin, Vietnamese and Cyrillic coverage inherited from the pinned sources; isolated Greek symbols do not imply full Greek support.
+- All eleven stylistic sets (`ss01`–`ss11`), localized forms, fractions, numeral variants, kerning and mark positioning.
 
-2. Clone the repository, and replace the font sources in the `sources` directory with your own font sources. These sources may be either in Glyphs format or UFO/Designspace formats.\
-   \
-   Unlike many open source distributors, Google Fonts is **curated**. Fonts shipped to the platform have to match the [Google Fonts Specifications](https://github.com/googlefonts/gf-docs/tree/main/Spec). Please read them carefully.\
-   \
-   _(The sample font provided in this template is [Radio Canada](https://github.com/googlefonts/radiocanadadisplay/) by Charles Daoud, Etienne Aubert Bonn, Alexandre Saumier Demers and contributors.)_
+## Installation
 
-3. Then reference the sources in the file `sources/config.yaml`, as well as making any other changes you would like to make based on the instructions in the [Google Fonts Builder documentation](https://github.com/googlefonts/gftools/blob/main/Lib/gftools/builder/__init__.py).
+Download the files from `fonts/Goist/` or install the npm package:
 
-4. Add yourself to the `AUTHORS.txt` and `CONTRIBUTORS.txt` files.
+```sh
+npm install goist
+```
 
-5. Fill out `documentation/ARTICLE.en_us.html` with a description of your font.
+```tsx
+import { GoistSans } from "goist/font/sans"; // Next.js (next/font/local)
+import "goist/sans.css";                     // any other bundler
+```
 
-6. Rewrite this Readme file according to the recommendations in the [Google Fonts Guide](https://googlefonts.github.io/gf-guide/readmefile.html).
+See [`packages/goist/README.md`](packages/goist/README.md) for Tailwind, static fonts and CSS variables.
 
-7. Add and commit these files to git.
+## Repository layout
 
-8. **At the command line, run `make customize` to ensure that all the paths and URLs in your project are correct**. This will also push your changes to GitHub.
+Each family owns one directory under `sources/`, `fonts/`, `build/` and `out/`. Goist Mono will be added as `GoistMono` alongside `Goist`, and shipped from the same `goist` npm package as `goist/font/mono`.
 
-9. **Set up your GitHub pages site**: go to your repository's Settings > Pages and ensure that the Build and deployment "Source" drop-down is set to "GitHub Actions". (Any preexisting Actions jobs can be re-run to publish now, or the deployment triggered also manually from the Actions tab. Subsequent commits will publish the proofs and QA results automatically.)
+| Path | Contents | Git |
+| --- | --- | --- |
+| `sources/Goist/` | gftools recipe and vendored upstream Geist Sans sources | committed |
+| `fonts/Goist/` | release TTF, OTF, variable and WOFF2 fonts | committed |
+| `build/Goist/` | generated editable sources, baseline build, manifests | ignored |
+| `out/Goist/` | verification report and browser proof | ignored |
+| `scripts/`, `tests/` | build driver, rounding geometry, audits, proofs | committed |
+| `packages/goist/` | `goist` npm package; webfonts are staged from `fonts/` on pack | committed (assets ignored) |
 
-10. If GitHub Actions has successfully built the family, you will find the font binaries in the Actions tab. The official GitHub Actions documentation provides further [information](https://docs.github.com/en/actions/managing-workflow-runs/downloading-workflow-artifacts).
+The public specimen site lives at [shadcn-labs.com/font](https://shadcn-labs.com/font), outside this repository.
 
-### Updating a repository
+## Build
 
-1. To update your font repository to bring in the latest best-practices from the Google Fonts Project Template, run `make update-project-template` from the command line. This requires the `node` Javascript engine to be installed; if you don't have that already, [follow these instructions](https://nodejs.org/en/download/package-manager#macos) to install on your platform.
+Requires Python 3.12 and `make`. The first command creates `venv/` and installs the locked Python toolchain. No Glyphs application, native font editor, or separately installed autohinter is required. Subsequent builds work offline with the installed environment and vendored sources.
 
-2. To update the Python build chain which builds your fonts, run `make update` and `git add`/`git commit` the new `requirements.txt`.
+```sh
+make build
+make test
+make proof
+```
 
-## More things to do
+| Output | Location |
+| --- | --- |
+| Upright and italic variable TTF | `fonts/Goist/variable/` |
+| Eighteen static TTF styles | `fonts/Goist/ttf/` |
+| Eighteen static OTF styles | `fonts/Goist/otf/` |
+| Variable and static WOFF2, with CSS | `fonts/Goist/webfonts/` |
+| Editable rounded Glyphs sources | `build/Goist/sources/` |
+| Per-glyph geometry reports | `build/Goist/rounding-upright.json`, `build/Goist/rounding-italic.json` |
+| Coverage, shaping and delivery audit | `out/Goist/verification.json` |
+| Interactive specimen and full-glyph atlases | `out/Goist/proof/` |
 
-- `CustomFilter_GF_Latin_All.plist` in `sources` is practical if you use GlyphsApp, you can remove it otherwise. Placed in the same directory as the your `.glyphs` file, it will allow Glyphs to display a filter list for all GF Latin glyphsets in app. To make sure your font supports the minimal set required by Google Fonts, look at the `GF_Latin_Core` filter list. Find other glyphsets and list formats for different software in [GF Glyphsets repository](https://github.com/googlefonts/glyphsets/tree/main/GF_glyphsets).
+Static TTFs are strictly autohinted with `ttfautohint-py`. Variable TTFs and static OTFs are not autohinted; static TrueType instructions cannot be reused after outline changes or copied into variable fonts. Failed compilation or static hinting stops the build before publishing artifacts. Existing unrelated files in `fonts/Goist/` are not deleted. Commit `fonts/Goist/` after every rebuild; it is the release output and the npm package's source.
 
-- Once you are happy with your font, add promotional assets in the documentation directory. Make it different from the pic you use in this README. You can get inspired by existing @googlefonts posts as: https://x.com/googlefonts/status/1415562928657416192.
+Static advances are taken from the corresponding variable-font location before hinting. This resolves one-unit component-interpolation differences between independently compiled statics and HVAR; both the horizontal metrics and embedded CFF charstring widths are aligned without changing outlines.
 
-- Google Fonts uses GitHub Releases to manage font families. If you feel your font project has hit a milestone, you must create a new release for it. In order to do this, go to the releases page and hit the "Draft a new release" button. You must provide a tag number and title which can only be a decimal number e.g. `0.100`, `1.000` etc. For the body text, mention what has changed since the last release. Once you are done, hit the "Publish release" button. Here is an example which fulfills the requirements, https://github.com/m4rc1e/test-ufr-family/releases/tag/2.019. For more info regarding GitHub release, please see the official GitHub Release [documentation](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository). **Please note that GitHub Actions must be able to build the fonts before you can make a release. Once you have made a release, the fonts and tests assets will be attached to the release automatically. This may take a while since the fonts and tests will be built from scratch so please be patient.**
+Build manifests hash every upstream package file, build configuration, geometry code and compiler versions. Changed or missing outputs invalidate the cache. `SOURCE_DATE_EPOCH` controls binary timestamps; the default is fixed. To force exports or limit compiler concurrency:
 
----
+```sh
+venv/bin/python scripts/build.py --force --jobs 4
+```
 
-# My Font
+## Preview
 
-[![][Fontspector]](https://googlefonts.github.io/googlefonts-project-template/fontspector/fontspector-report.html)
-[![][OpenType]](https://googlefonts.github.io/googlefonts-project-template/fontspector/fontspector-report.html)
-[![][Universal]](https://googlefonts.github.io/googlefonts-project-template/fontspector/fontspector-report.html)
-[![][Google Fonts]](https://googlefonts.github.io/googlefonts-project-template/fontspector/fontspector-report.html)
-[![][Glyphset]](https://googlefonts.github.io/googlefonts-project-template/fontspector/fontspector-report.html)
+Serve the repository root, not just the proof directory:
 
-[Fontspector]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FFontspectorQA.json
-[OpenType]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FOpentypeSpecificationChecks.json
-[Universal]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FUniversalProfileChecks.json
-[Google Fonts]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FFontFileChecks.json
-[Outline Correctness]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FOutlineCorrectnessChecks.json
-[Glyphset]: https://img.shields.io/endpoint?url=https%3A%2F%2Fgooglefonts.github.io%2Fgooglefonts-project-template%2Fbadges%2FGlyphsetChecks.json
+```sh
+python3 -m http.server 8765 --bind 127.0.0.1
+```
 
-Description of your font goes here. We recommend to start with a very short presentation line (the kind you would use on twitter to present your project for example), and then add as much details as necesary :-) Origin of the project, idea of usage, concept of creation… but also number of masters, axes, character sets, etc.
+Open <http://127.0.0.1:8765/out/Goist/proof/>. The specimen provides weight, size, italic and OpenType controls, original-versus-rounded text, small-size waterfalls, and 24 complete outline atlases. Unencoded glyphs are shown directly as SVG outlines. Unsupported characters receive explicit codepoint labels rather than silently appearing in a fallback font. All assets are local.
 
-Don't hesitate to create images!
+## npm package
 
-![Sample Image](documentation/image1.png)
-![Sample Image](documentation/image2.png)
+```sh
+make package        # build fonts, stage them into packages/goist/assets/, write goist-<version>.tgz
+cd packages/goist && npm publish
+```
 
-## About
+`prepack` (`scripts/stage-assets.mjs`) copies `fonts/Goist/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2`, so publishing always ships the committed fonts. Bump `version` in `packages/goist/package.json` with each font release.
 
-Description of you and/or organisation goes here.
+## Web use
 
-## Building
+Without npm, load `fonts/Goist/webfonts/goist.css` and keep its sibling WOFF2 files alongside it:
 
-Fonts are built automatically by GitHub Actions — take a look in the "Actions" tab for the latest build.
+```html
+<link rel="stylesheet" href="/fonts/Goist/webfonts/goist.css">
+```
 
-If you want to build fonts manually on your own computer:
+```css
+body {
+  font-family: "Goist", sans-serif;
+  font-weight: 400;
+}
 
-- `make build` will produce font files.
-- `make test` will run [Fontspector](https://fonttools.github.io/fontspector/)'s quality assurance tests.
-- `make proof` will generate HTML proof files.
+em {
+  font-style: italic;
+}
+```
 
-The proof files and QA tests are also available automatically via GitHub Actions — look at `https://yourname.github.io/your-font-repository-name`.
+Use `goist-static.css` instead if individual static webfonts are preferred; do not load both family definitions.
+
+## Source and rounding
+
+The original editable upright and italic packages are vendored unchanged under `sources/Goist/upstream/`, pinned to [Geist v1.9.2](https://github.com/vercel/geist-font/releases/tag/v1.9.2), commit `ef2597cfc42f4797676df105517ccc0a1cfa6569`. `manifest.json` records provenance and immutable reference-font hashes.
+
+`scripts/rounding.py` measures stems per master, then trims neighboring line/cubic segments and inserts tangent cubic fillets. Exact Bézier ink containment prevents polygon-approximation errors at curved terminals. Hidden overlap corners and concave counter corners retain their original construction. Short edges constrain local radii rather than allowing adjacent fillets to cross.
+
+The transformation maintains corresponding contours and point types across Thin, Regular and Black masters, including the `f` intermediate layer at weight 801. Unmoved support cubics preserve correspondence where a corner is only exposed in some masters. Components, anchors, advances, kerning and feature definitions remain in the sources. Non-exporting helper glyphs and backup layers are retained. Geometry errors are explicit failures, not silent glyph reversions.
+
+Design and workflow references:
+
+- [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans): weight-sensitive rounding and glyph-specific review.
+- [Intern](https://github.com/bvvst/intern): fully rounded terminal treatment across variable weights.
+- [Open Runde](https://github.com/lauridskern/open-runde): restrained softness and the need to correct automatic rounding.
+
+Goist uses Geist outlines; it does not merge outlines from these references.
+
+## Verification
+
+`make test` builds a separate unrounded source baseline, compares final fonts against it, and runs geometry regressions. The font audit checks glyph and Unicode inventories, advances and line metrics, OpenType layout and HarfBuzz shaping, named and intermediate variable weights, genuine italic/style naming, CFF delivery, and WOFF2 parity. It covers unencoded glyph outlines as well as Unicode-mapped characters. The JSON report retains explicit differences between the source baseline and older official reference binaries.
+
+Authorship checks compare exported designer and manufacturer names against the first entry in `AUTHORS.txt`, and require the retained upstream copyright, explicit Vercel Geist Sans credit and OFL licensing. Both font metadata and preview author labels use that author entry.
+
+**Upstream distinction:** the pinned source version is 1.900, whereas its committed reference binaries report 1.800. Both export 975 glyphs and map 728 codepoints. The source corrects an erroneous mapping of U+03C9 (lowercase omega) to the uppercase Omega outline, replacing that alias with U+2126 (ohm sign). Goist follows this correction; it does not claim a lowercase omega design that Geist never supplied. No glyph outline is removed by this correction.
+
+Optional additional binary QA, with Fontspector installed separately:
+
+```sh
+make qa
+```
+
+Automated checks complement the browser proofs; they do not replace visual review of every glyph or establish testing on every operating system.
+
+## License and credits
+
+Goist's rounded design and modifications are copyright 2026 **Aniket-508**, the project's primary author. The font is distributed under the **SIL Open Font License 1.1**. Required original Geist copyright and license notices remain in `OFL.txt` and `sources/upstream/`; Vercel Geist Sans and its contributors receive upstream credit in `CONTRIBUTORS.txt` and the font's description metadata. Goist is an independent derivative, not an official Vercel release.
 
 ## Changelog
 
-When you update your font (new version or new release), please report all notable changes here, with a date.
-[Font Versioning](https://github.com/googlefonts/gf-docs/tree/main/Spec#font-versioning) is based on semver.
-Changelog example:
+### 1.000 — 2026-11-12
 
-**26 May 2021. Version 2.13**
-
-- MAJOR Font turned to a variable font.
-- SIGNIFICANT New Stylistic sets added.
-
-## License
-
-This Font Software is licensed under the SIL Open Font License, Version 1.1.
-This license is available with a FAQ at https://openfontlicense.org
-
-## Repository Layout
-
-This font repository structure is inspired by [Unified Font Repository v0.3](https://github.com/unified-font-repository/Unified-Font-Repository), modified for the Google Fonts workflow.
+- Added stem-relative rounded outlines across the complete upright and italic source families.
+- Preserved the full exported glyph repertoire, all eleven stylistic sets and the original advance/line-metric contract.
+- Added portable static, variable and webfont builds, strict source-parity verification, geometry regression tests and offline interactive proofs.
+- Replaced the Radio Canada project-template build with the pinned Geist-derived Goist workflow.
+- Identified Aniket-508 as the Goist author and copyright holder for the derivative work, with Vercel Geist Sans credited upstream and its required notices retained.

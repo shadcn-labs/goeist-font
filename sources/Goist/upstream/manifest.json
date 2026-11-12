@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/vercel/geist-font",
+  "tag": "v1.9.2",
+  "commit": "ef2597cfc42f4797676df105517ccc0a1cfa6569",
+  "reference_sha256": {
+    "Geist[wght].ttf": "73894e0448cae90a92b6c2f8732b7bb9acb7b94c418bff559dad4a18e1de9659",
+    "Geist-Italic[wght].ttf": "a464348abe41a6392f18d04c0ac2ad3c26619357ff5fdd76aff3059116f45e62"
+  },
+  "source_version": "1.900",
+  "reference_binary_version": "1.800",
+  "source_glyphs_per_style": 994,
+  "exported_glyphs_per_style": 975,
+  "unicode_codepoints_per_style": 728,
+  "upstream_unicode_correction": {
+    "removed": "U+03C9",
+    "added": "U+2126",
+    "glyph": "Omega",
+    "reason": "The pinned editable source corrects the older binary's erroneous lowercase omega mapping to uppercase Omega. Goist follows the source, not the erroneous binary alias."
+  },
+  "licenses": ["OFL.txt", "LICENSE.txt"]
+}
