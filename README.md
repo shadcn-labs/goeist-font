@@ -8,6 +8,10 @@
 
 # Goeist Sans & Goeist Mono
 
+> **Experimental**
+>
+> Goeist is an early public preview and is not recommended for production use. Some glyphs, ligatures, and symbols have known issues. Letterforms and spacing may change between releases. Feedback and issue reports are welcome.
+
 Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist](https://github.com/vercel/geist-font) by Vercel and Basement Studio.
 
 Goeist Sans keeps Geist's proportions, spacing and OpenType features, and softens every exposed corner and stroke ending. It is designed for interfaces, body copy and display sizes where Geist should feel a little warmer.
