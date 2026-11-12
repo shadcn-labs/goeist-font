@@ -1,0 +1,4 @@
+minimumReleaseAge: 2880
+# esbuild's postinstall only re-checks its platform binary, which pnpm installs as an optional dependency.
+ignoredBuiltDependencies:
+  - esbuild

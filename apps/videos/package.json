@@ -1,0 +1,26 @@
+{
+  "name": "goeist-videos",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Goeist launch video, rendered with Remotion.",
+  "type": "module",
+  "scripts": {
+    "fonts": "node scripts/stage-fonts.mjs",
+    "dev": "node scripts/stage-fonts.mjs && remotion studio src/index.ts",
+    "render": "node scripts/stage-fonts.mjs && remotion render src/index.ts GoeistLaunch out/goeist-launch.mp4",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.542",
+    "@remotion/fonts": "4.0.542",
+    "@remotion/media": "4.0.542",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.542"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@10.28.2"
+}

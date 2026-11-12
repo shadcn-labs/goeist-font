@@ -13,6 +13,11 @@ node_modules/
 /packages/goeist/assets/
 /packages/goeist/LICENSE.txt
 
+# Launch video: fonts staged from fonts/, rendered output and `remotion bundle` output
+/apps/videos/public/fonts/
+/apps/videos/out/
+/apps/videos/build/
+
 # Editors and OS
 .DS_Store
 ._*
