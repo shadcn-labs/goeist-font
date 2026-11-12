@@ -45,6 +45,6 @@ qa: build
 			fonts/$$family/variable/*.ttf; \
 	done
 
-# Stage webfonts into packages/goist and produce an inspectable npm tarball.
+# Stage webfonts into packages/goeist and produce an inspectable npm tarball.
 package: build
-	cd packages/goist && npm pack
+	cd packages/goeist && npm pack

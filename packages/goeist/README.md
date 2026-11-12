@@ -1,9 +1,9 @@
 # Goist Sans & Goist Mono
 
-Goist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). Goist Sans is a rounded derivative of [Geist Sans](https://github.com/vercel/geist-font) and Goist Mono of Geist Mono, both created by Vercel in collaboration with Basement Studio. Each has nine weights (100–900) with genuine italics, as variable and static WOFF2.
+Goist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). Goist Sans is a rounded derivative of [Geist Sans](https://github.com/vercel/geist-font) and Goist Mono of Geist Mono, both created by Vercel in collaboration with Basement Studio. Each has nine weights (100–900) with genuine italics, as variable and static WOFF2. The npm package is `goeist`.
 
 ```sh
-npm install goist
+npm install goeist
 ```
 
 ## Next.js
@@ -12,8 +12,8 @@ npm install goist
 
 ```tsx
 // app/layout.tsx
-import { GoistSans } from "goist/font/sans";
-import { GoistMono } from "goist/font/mono";
+import { GoistSans } from "goeist/font/sans";
+import { GoistMono } from "goeist/font/mono";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,18 +36,18 @@ Use the CSS variables to combine them with Tailwind or other fonts:
 
 | Export | Entry point | CSS variable |
 | --- | --- | --- |
-| `GoistSans` | `goist/font/sans` | `--font-goist-sans` |
-| `GoistSansNonVariable` | `goist/font/sans-non-variable` | `--font-goist-sans-non-variable` |
-| `GoistMono` | `goist/font/mono` | `--font-goist-mono` |
-| `GoistMonoNonVariable` | `goist/font/mono-non-variable` | `--font-goist-mono-non-variable` |
+| `GoistSans` | `goeist/font/sans` | `--font-goist-sans` |
+| `GoistSansNonVariable` | `goeist/font/sans-non-variable` | `--font-goist-sans-non-variable` |
+| `GoistMono` | `goeist/font/mono` | `--font-goist-mono` |
+| `GoistMonoNonVariable` | `goeist/font/mono-non-variable` | `--font-goist-mono-non-variable` |
 
 Prefer the variable exports (two files each). The non-variable exports ship 18 static files and are only needed for browsers without variable-font support.
 
 ## Plain CSS (Vite, Astro, Remix, …)
 
 ```js
-import "goist/sans.css"; // or "goist/sans-static.css"; never both
-import "goist/mono.css"; // or "goist/mono-static.css"; never both
+import "goeist/sans.css"; // or "goeist/sans-static.css"; never both
+import "goeist/mono.css"; // or "goeist/mono-static.css"; never both
 ```
 
 ```css

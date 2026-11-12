@@ -1,5 +1,5 @@
 {
-  "name": "goist",
+  "name": "goeist",
   "version": "0.0.1",
   "description": "Goist and Goist Mono, rounded typefaces by Aniket-508 developed under Shadcn Labs and based on Geist Sans and Geist Mono, for next/font and plain CSS.",
   "type": "module",
@@ -12,9 +12,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shadcn-labs/goist.git",
-    "directory": "packages/goist"
+    "directory": "packages/goeist"
   },
   "keywords": [
+    "goeist",
     "goist",
     "font",
     "typeface",

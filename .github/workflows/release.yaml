@@ -1,6 +1,6 @@
 name: Release font bundles
 
-# `pnpm release` (changeset publish) in packages/goist tags each npm release as
+# `pnpm release` (changeset publish) in packages/goeist tags each npm release as
 # v<version>; pushing that tag attaches the committed fonts to a GitHub Release.
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           awk -v heading="## $version" '$0 == heading {found=1; next} found && /^## / {exit} found' \
-            packages/goist/CHANGELOG.md > dist/notes.md
+            packages/goeist/CHANGELOG.md > dist/notes.md
           test -s dist/notes.md
       - name: Create GitHub Release
         env:

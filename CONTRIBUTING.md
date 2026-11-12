@@ -56,12 +56,12 @@ Load `fonts/Goist/webfonts/goist.css` or `fonts/GoistMono/webfonts/goist-mono.cs
 
 ## Versioning and npm release
 
-Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package version (currently `0.0.1`) is managed by [Changesets](https://github.com/changesets/changesets) in `packages/goist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
+Font versions (currently `0.001`) are set once in `FONT_VERSION` in `scripts/families.py`; keep `version` in each `sources/<Family>/config.yaml` equal to it (the build refuses a mismatch). The npm package, published as `goeist` (npm blocks the unscoped name `goist` as too similar to `got` and `plist`), is versioned (currently `0.0.1`) by [Changesets](https://github.com/changesets/changesets) in `packages/goeist`, as in `vercel/geist-font`. Requires Node 22 (`.nvmrc`) and pnpm.
 
 With every change that should ship, add a changeset describing it:
 
 ```sh
-cd packages/goist
+cd packages/goeist
 pnpm install
 pnpm changeset          # pick patch / minor / major and write the summary
 ```
@@ -70,25 +70,27 @@ To release:
 
 ```sh
 make build                       # from the repository root; commit fonts/
-cd packages/goist
+cd packages/goeist
 pnpm run version                 # apply changesets: bump package.json, update CHANGELOG.md
 git commit -am "Version packages" && git push
 pnpm release                     # changeset publish: packs (running prepack) and publishes to npm
 git push --follow-tags
 ```
 
-The first release is already at `0.0.1` with its entry in `packages/goist/CHANGELOG.md`, so publish it with `pnpm release` without adding a changeset. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goist-<version>.tgz` without publishing.
+`changeset publish` runs npm non-interactively, so an account secured with a passkey or security key fails with `EOTP`. Until trusted publishing is configured, publish from a terminal with `npm publish` in `packages/goeist` (approve the browser prompt), then tag and push: `git tag v<version> && git push origin v<version>`.
+
+The first release is already at `0.0.1` with its entry in `packages/goeist/CHANGELOG.md`, so publish it without adding a changeset. Do not merge Changesets prerelease state (`.changeset/pre.json`); the `Guard prerelease state` workflow rejects it. `make package` writes an inspectable `goeist-<version>.tgz` without publishing.
 
 `prepack` (`scripts/stage-assets.mjs`) copies each family's `fonts/<Family>/webfonts/` into the package and renames `Goist[wght].woff2` to `Goist-Variable.woff2` (likewise for Goist Mono), so publishing always ships the committed fonts.
 
-Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goist-v<version>.zip` and `GoistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goist@<version>/assets/goist-mono/goist-mono.css`.
+Pushing the `v<version>` tag that `pnpm release` creates runs `.github/workflows/release.yaml`, which creates the GitHub Release with `Goist-v<version>.zip` and `GoistMono-v<version>.zip` (committed fonts plus licenses) and that version's `CHANGELOG.md` notes. Once on npm, the package is also served by jsDelivr and unpkg, e.g. `https://cdn.jsdelivr.net/npm/goeist@<version>/assets/goist-mono/goist-mono.css`.
 
 ## Adding a family
 
 1. Vendor the upstream upright and italic `.glyphspackage` sources, reference variable fonts, licenses and a `manifest.json` under `sources/<Family>/upstream/`.
 2. Add `sources/<Family>/config.yaml` (gftools recipe with the family name and STAT tables).
 3. Register the family and its rounding profile in `scripts/families.py`, and add it to `FAMILIES` in the `Makefile`.
-4. Add the family to `packages/goist/scripts/stage-assets.mjs`, with `font/<name>.js`/`.d.ts` entries and `exports` in `package.json`.
+4. Add the family to `packages/goeist/scripts/stage-assets.mjs`, with `font/<name>.js`/`.d.ts` entries and `exports` in `package.json`.
 
 ## Source and rounding
 

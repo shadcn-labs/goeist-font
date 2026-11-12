@@ -10,8 +10,8 @@ __pycache__/
 # Node / npm package
 node_modules/
 *.tgz
-/packages/goist/assets/
-/packages/goist/LICENSE.txt
+/packages/goeist/assets/
+/packages/goeist/LICENSE.txt
 
 # Editors and OS
 .DS_Store

@@ -19,23 +19,23 @@ Download the latest release from the [releases page](https://github.com/shadcn-l
 **Via npm package:**
 
 ```
-npm i goist
+npm i goeist
 ```
 
 ```js
-import { GoistSans } from "goist/font/sans"; // Next.js (next/font)
-import { GoistMono } from "goist/font/mono";
-import "goist/sans.css";                     // any other bundler
-import "goist/mono.css";
+import { GoistSans } from "goeist/font/sans"; // Next.js (next/font)
+import { GoistMono } from "goeist/font/mono";
+import "goeist/sans.css";                     // any other bundler
+import "goeist/mono.css";
 ```
 
-See the [package README](packages/goist/README.md) for Tailwind, static fonts and CSS variables. The specimen lives at [shadcn-labs.com/font](https://shadcn-labs.com/font).
+See the [package README](packages/goeist/README.md) for Tailwind, static fonts and CSS variables. The specimen lives at [shadcn-labs.com/font](https://shadcn-labs.com/font).
 
 **Via CDN:**
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goist@0.0.1/assets/goist-sans/goist-sans.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goist@0.0.1/assets/goist-mono/goist-mono.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goist-sans/goist-sans.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/goeist@0.0.1/assets/goist-mono/goist-mono.css">
 ```
 
 Then use `font-family: "Goist"` and `font-family: "Goist Mono"`.
@@ -70,6 +70,6 @@ Each family owns one directory under `sources/`, `fonts/`, `build/` and `out/`, 
 | --- | --- |
 | `sources/Goist/`, `sources/GoistMono/` | gftools recipes and vendored upstream Geist Sans and Geist Mono sources |
 | `fonts/Goist/`, `fonts/GoistMono/` | release TTF, OTF, variable and WOFF2 fonts |
-| `packages/goist/` | the `goist` npm package |
+| `packages/goeist/` | the `goeist` npm package |
 | `scripts/`, `tests/` | family registry, build driver, rounding geometry, audits, proofs |
 | `build/`, `out/` | generated sources, baselines, reports and proofs (git-ignored) |
