@@ -14,7 +14,7 @@ Goeist Mono is the monospaced partner to Goeist Sans. Every exposed corner is dr
 
 ### Installation
 
-Download the latest release from the [releases page](https://github.com/shadcn-labs/goeist/releases/latest) (or the files in [`fonts/Goeist/`](fonts/Goeist/) and [`fonts/GoeistMono/`](fonts/GoeistMono/)) and install the fonts on your system.
+Download the latest release from the [releases page](https://github.com/shadcn-labs/goeist-font/releases/latest) (or the files in [`fonts/Goeist/`](fonts/Goeist/) and [`fonts/GoeistMono/`](fonts/GoeistMono/)) and install the fonts on your system.
 
 **Via npm package:**
 

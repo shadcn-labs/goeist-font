@@ -7,11 +7,11 @@
   "author": "Aniket-508 <pawaraniket508@gmail.com>",
   "homepage": "https://shadcn-labs.com/font",
   "bugs": {
-    "url": "https://github.com/shadcn-labs/goeist/issues"
+    "url": "https://github.com/shadcn-labs/goeist-font/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shadcn-labs/goeist.git",
+    "url": "git+https://github.com/shadcn-labs/goeist-font.git",
     "directory": "packages/goeist"
   },
   "keywords": [
