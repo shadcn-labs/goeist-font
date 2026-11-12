@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--dark.png">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png">
-  <img alt="Goeist Sans and Goeist Mono type specimens" src="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png" width="1024" height="521">
+  <img alt="Goeist Sans and Goeist Mono type specimens" src="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png" width="1024">
 </picture>
 
 # Goeist Sans & Goeist Mono
