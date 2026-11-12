@@ -1,6 +1,6 @@
 {
   "name": "goeist",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Goeist is Shadcn Labs' font family, including Goeist Sans and Goeist Mono.",
   "type": "module",
   "license": "OFL-1.1",
