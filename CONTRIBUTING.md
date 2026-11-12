@@ -1,5 +1,9 @@
 # Contributing to Goeist
 
+## Reporting issues
+
+Use the [Font Issue Report](https://github.com/shadcn-labs/goeist-font/issues/new?template=BUG_REPORT.md). Include the font family, steps to reproduce, screenshots, OS and software. The internal font version and npm package version are separate; include both when reporting a package issue.
+
 ## Build
 
 Requires Python 3.12 and `make`. The first command creates `venv/` and installs the locked Python toolchain. No Glyphs application, native font editor, or separately installed autohinter is required. Subsequent builds work offline with the installed environment and vendored sources.
