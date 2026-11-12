@@ -4,7 +4,7 @@ name: Release
 # from pending changesets in packages/goeist. Merging that PR bumps the version;
 # this workflow then publishes it to npm through trusted publishing (OIDC, no
 # token) and creates the GitHub Release with the font zips. npm's trusted
-# publisher for `goeist` must name this file: release.yaml.
+# publisher for `goeist` must name this file: release.yml.
 on:
   push:
     branches:

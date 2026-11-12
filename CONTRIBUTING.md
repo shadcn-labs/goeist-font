@@ -66,7 +66,7 @@ pnpm install
 pnpm changeset          # pick patch / minor / major and write the summary
 ```
 
-Releases are automated by `.github/workflows/release.yaml`, which is registered as the npm trusted publisher for `goeist`:
+Releases are automated by `.github/workflows/release.yml`, which is registered as the npm trusted publisher for `goeist`. Changesets only versions; the same workflow publishes, tags and releases:
 
 1. Commit the rebuilt `fonts/` (`make build`) and a changeset, and push or merge to `main`.
 2. The workflow opens or updates a **Version packages** pull request that bumps `package.json` and `CHANGELOG.md`.
