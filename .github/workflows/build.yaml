@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    name: Compile and verify complete family
+    name: Compile and verify Goist and Goist Mono
     runs-on: ubuntu-latest
     env:
       SOURCE_DATE_EPOCH: '1767225600'
@@ -32,7 +32,7 @@ jobs:
           cache-dependency-path: requirements.txt
       - name: Install locked portable toolchain
         run: make venv
-      - name: Build upright and italic static, variable and web fonts
+      - name: Build upright and italic static, variable and web fonts for every family
         run: make build
       - name: Verify source parity, OpenType behavior and regression tests
         run: make test
@@ -44,17 +44,17 @@ jobs:
           name: goist-fonts
           if-no-files-found: error
           path: |
-            fonts/Goist/
-            out/Goist/
-            build/Goist/sources/*.glyphs
-            build/Goist/rounding-*.json
-            build/Goist/build-manifest.json
-            build/Goist/baseline-manifest.json
-            sources/Goist/config.yaml
-            sources/Goist/upstream/OFL.txt
-            sources/Goist/upstream/LICENSE.txt
-            sources/Goist/upstream/manifest.json
-            sources/Goist/upstream/reference/
+            fonts/
+            out/
+            build/*/sources/*.glyphs
+            build/*/rounding-*.json
+            build/*/build-manifest.json
+            build/*/baseline-manifest.json
+            sources/*/config.yaml
+            sources/*/upstream/OFL.txt
+            sources/*/upstream/LICENSE.txt
+            sources/*/upstream/manifest.json
+            sources/*/upstream/reference/
             OFL.txt
             AUTHORS.txt
             CONTRIBUTORS.txt

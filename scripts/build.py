@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build the complete Goist family from vendored, editable sources.
+"""Build a Goist family from vendored, editable sources.
 
-Each family owns sources/<Family>/, build/<Family>/ and fonts/<Family>/.
-Compilation happens in a private staging directory. Existing release files are
-replaced only after every expected export, hinting step and WOFF2 succeeds;
-unrelated files in fonts/<Family>/ are never removed. Content hashes, rather than
-package directory mtimes, govern incremental rebuilding.
+Each family (see families.py) owns sources/<Family>/, build/<Family>/ and
+fonts/<Family>/. Compilation happens in a private staging directory. Existing
+release files are replaced only after every expected export, hinting step and
+WOFF2 succeeds; unrelated files in fonts/<Family>/ are never removed. Content
+hashes, rather than package directory mtimes, govern incremental rebuilding.
 """
 
 from __future__ import annotations
@@ -29,13 +29,10 @@ from fontTools.ttLib import TTFont
 from ttfautohint import TAError, ttfautohint
 import yaml
 
+from families import FAMILIES, Family
+from rounding import add_automatic_ligatures
+
 ROOT = Path(__file__).resolve().parent.parent
-FAMILY = "Goist"
-SOURCES = ROOT / "sources" / FAMILY
-CONFIG = SOURCES / "config.yaml"
-UPSTREAM = SOURCES / "upstream"
-BUILD = ROOT / "build" / FAMILY
-FONTS = ROOT / "fonts" / FAMILY
 STYLES = (
     (100, "Thin"), (200, "ExtraLight"), (300, "Light"),
     (400, "Regular"), (500, "Medium"), (600, "SemiBold"),
@@ -51,16 +48,25 @@ def styles():
         yield weight, "Italic" if name == "Regular" else name + "Italic", "italic"
 
 
-def expected_paths(family: str, web: bool = True) -> list[Path]:
-    paths = [Path(kind) / f"{family}-{name}.{kind}"
+def sources_dir(family: Family) -> Path:
+    return ROOT / "sources" / family.key
+
+
+def build_dir(family: Family) -> Path:
+    return ROOT / "build" / family.key
+
+
+def expected_paths(prefix: str, css: str | None = None) -> list[Path]:
+    """Every release file for `prefix`; webfonts and stylesheets only with `css`."""
+    paths = [Path(kind) / f"{prefix}-{name}.{kind}"
              for kind in ("ttf", "otf") for _, name, _ in styles()]
-    variables = [f"{family}[wght]", f"{family}-Italic[wght]"]
+    variables = [f"{prefix}[wght]", f"{prefix}-Italic[wght]"]
     paths += [Path("variable") / f"{name}.ttf" for name in variables]
-    if web:
-        paths += [Path("webfonts") / f"{family}-{name}.woff2"
+    if css:
+        paths += [Path("webfonts") / f"{prefix}-{name}.woff2"
                   for _, name, _ in styles()]
         paths += [Path("webfonts") / f"{name}.woff2" for name in variables]
-        paths += [Path("webfonts") / name for name in ("goist.css", "goist-static.css")]
+        paths += [Path("webfonts") / name for name in (f"{css}.css", f"{css}-static.css")]
     return paths
 
 
@@ -72,11 +78,13 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def input_state(epoch: int) -> dict:
-    files = [CONFIG, ROOT / "requirements.txt", ROOT / "requirements.in",
-             ROOT / "scripts/build.py", ROOT / "scripts/rounding.py", ROOT / "AUTHORS.txt"]
-    for name in ("Geist.glyphspackage", "Geist-Italic.glyphspackage"):
-        package = UPSTREAM / name
+def input_state(family: Family, epoch: int) -> dict:
+    upstream = sources_dir(family) / "upstream"
+    files = [sources_dir(family) / "config.yaml", ROOT / "requirements.txt", ROOT / "requirements.in",
+             ROOT / "scripts/build.py", ROOT / "scripts/rounding.py", ROOT / "scripts/families.py",
+             ROOT / "AUTHORS.txt"]
+    for name in (family.upstream_key, family.upstream_key + "-Italic"):
+        package = upstream / f"{name}.glyphspackage"
         if not package.is_dir():
             raise RuntimeError(f"Missing vendored source package: {package}")
         files.extend(path for path in package.rglob("*") if path.is_file())
@@ -125,13 +133,13 @@ def run(command: list[str], env: dict, cwd: Path = ROOT):
     subprocess.run(command, check=True, cwd=cwd, env=env)
 
 
-def require_exports(directory: Path, family: str):
-    for relative in expected_paths(family, web=False):
+def require_exports(directory: Path, prefix: str):
+    for relative in expected_paths(prefix):
         path = directory / relative
         if not path.is_file() or path.stat().st_size == 0:
             raise RuntimeError(f"Compiler did not produce required export: {path}")
     for kind in ("ttf", "otf", "variable"):
-        expected = {path.name for path in expected_paths(family, web=False)
+        expected = {path.name for path in expected_paths(prefix)
                     if path.parts[0] == kind}
         actual = {path.name for path in (directory / kind).glob("*") if path.is_file()}
         if actual != expected:
@@ -219,9 +227,9 @@ def compile_family(config: dict, source_paths: list[Path], family: str,
     return directory
 
 
-def face(filename: str, weight: str, style: str) -> str:
+def face(family_name: str, filename: str, weight: str, style: str) -> str:
     return ("@font-face {\n"
-            "  font-family: 'Goist';\n"
+            f"  font-family: '{family_name}';\n"
             f"  src: url('./{filename}') format('woff2');\n"
             f"  font-weight: {weight};\n"
             f"  font-style: {style};\n"
@@ -229,7 +237,7 @@ def face(filename: str, weight: str, style: str) -> str:
             "}\n")
 
 
-def webfonts(directory: Path):
+def webfonts(directory: Path, family: Family):
     web = directory / "webfonts"
     web.mkdir(exist_ok=True)
     for kind in ("ttf", "variable"):
@@ -237,14 +245,15 @@ def webfonts(directory: Path):
             with TTFont(path, recalcTimestamp=False) as font:
                 font.flavor = "woff2"
                 font.save(web / path.with_suffix(".woff2").name)
-    (web / "goist.css").write_text(
-        "/* Variable family: load this OR goist-static.css, not both. */\n" +
-        face("Goist[wght].woff2", "100 900", "normal") + "\n" +
-        face("Goist-Italic[wght].woff2", "100 900", "italic"), encoding="utf-8")
-    (web / "goist-static.css").write_text(
-        "/* Static family: load this OR goist.css, not both. */\n" +
-        "\n".join(face(f"Goist-{name}.woff2", str(weight), style)
-                    for weight, name, style in styles()), encoding="utf-8")
+    variable, static = f"{family.css}.css", f"{family.css}-static.css"
+    (web / variable).write_text(
+        f"/* Variable family: load this OR {static}, not both. */\n" +
+        face(family.name, f"{family.key}[wght].woff2", "100 900", "normal") + "\n" +
+        face(family.name, f"{family.key}-Italic[wght].woff2", "100 900", "italic"), encoding="utf-8")
+    (web / static).write_text(
+        f"/* Static family: load this OR {variable}, not both. */\n" +
+        "\n".join(face(family.name, f"{family.key}-{name}.woff2", str(weight), style)
+                  for weight, name, style in styles()), encoding="utf-8")
 
 
 def publish(staged: Path, destination: Path, paths: list[Path]):
@@ -261,65 +270,73 @@ def publish(staged: Path, destination: Path, paths: list[Path]):
         temporary.replace(target)
 
 
-def baseline(config: dict, state: dict, env: dict, jobs: int, force: bool):
-    destination = BUILD / "baseline"
-    manifest = BUILD / "baseline-manifest.json"
-    paths = expected_paths("Geist", web=False)
+def baseline(family: Family, config: dict, state: dict, env: dict, jobs: int, force: bool):
+    build = build_dir(family)
+    destination = build / "baseline"
+    manifest = build / "baseline-manifest.json"
+    paths = expected_paths(family.upstream_key)
     if not force and cached(manifest, state, destination, paths):
-        print("Unrounded source baseline is current.")
+        print(f"Unrounded {family.upstream_name} source baseline is current.")
         return
-    sources_dir = BUILD / "baseline-sources"
-    sources_dir.mkdir(parents=True, exist_ok=True)
+    staging = build / "baseline-sources"
+    staging.mkdir(parents=True, exist_ok=True)
     sources = []
-    for basename in ("Geist", "Geist-Italic"):
-        target = sources_dir / f"{basename}.glyphs"
-        # A serialization-only conversion keeps compiler side effects out of the
-        # pinned upstream packages; no rounding or metadata rewriting is applied.
-        glyphsLib.load(str(UPSTREAM / f"{basename}.glyphspackage")).save(str(target))
+    for basename in (family.upstream_key, family.upstream_key + "-Italic"):
+        target = staging / f"{basename}.glyphs"
+        # Only serialization, plus the family's declared automatic-feature
+        # recreation, keeps compiler side effects out of the pinned upstream
+        # packages; no rounding or metadata rewriting is applied.
+        font = glyphsLib.load(str(sources_dir(family) / "upstream" / f"{basename}.glyphspackage"))
+        if family.automatic_ligatures:
+            add_automatic_ligatures(font)
+        font.save(str(target))
         sources.append(target)
     baseline_config = dict(config)
-    baseline_config["familyName"] = "Geist"
+    baseline_config["familyName"] = family.upstream_name
     baseline_config.pop("version", None)
-    baseline_config["stat"] = {name.replace("Goist", "Geist"): axes
+    baseline_config["stat"] = {name.replace(family.key, family.upstream_key): axes
                                for name, axes in config["stat"].items()}
-    with tempfile.TemporaryDirectory(prefix="baseline-", dir=BUILD) as temporary:
-        staged = compile_family(baseline_config, sources, "Geist", env, jobs, Path(temporary))
+    with tempfile.TemporaryDirectory(prefix="baseline-", dir=build) as temporary:
+        staged = compile_family(baseline_config, sources, family.upstream_key, env, jobs, Path(temporary))
         publish(staged, destination, paths)
     record(manifest, state, [destination / path for path in paths])
 
 
-def rounded(config: dict, state: dict, env: dict, jobs: int, force: bool):
-    destination = FONTS
-    manifest = BUILD / "build-manifest.json"
-    paths = expected_paths("Goist")
-    sources_dir = BUILD / "sources"
-    sources = [sources_dir / "Goist.glyphs", sources_dir / "Goist-Italic.glyphs"]
-    reports = [BUILD / "rounding-upright.json", BUILD / "rounding-italic.json"]
+def rounded(family: Family, config: dict, state: dict, env: dict, jobs: int, force: bool):
+    build = build_dir(family)
+    destination = ROOT / "fonts" / family.key
+    manifest = build / "build-manifest.json"
+    paths = expected_paths(family.key, family.css)
+    staging = build / "sources"
+    sources = [staging / f"{family.key}.glyphs", staging / f"{family.key}-Italic.glyphs"]
+    reports = [build / "rounding-upright.json", build / "rounding-italic.json"]
     extras = sources + reports
     if not force and cached(manifest, state, destination, paths, extras):
-        print("Goist exports are current.")
+        print(f"{family.name} exports are current.")
         return
-    sources_dir.mkdir(parents=True, exist_ok=True)
-    for basename, target, report in zip(("Geist", "Geist-Italic"), sources, reports):
-        run([sys.executable, "scripts/rounding.py", "--source",
-             str(UPSTREAM / f"{basename}.glyphspackage"), "--output", str(target),
+    staging.mkdir(parents=True, exist_ok=True)
+    for basename, target, report in zip((family.upstream_key, family.upstream_key + "-Italic"),
+                                        sources, reports):
+        run([sys.executable, "scripts/rounding.py", "--family", family.key, "--source",
+             str(sources_dir(family) / "upstream" / f"{basename}.glyphspackage"), "--output", str(target),
              "--report", str(report)], env)
     for path in extras:
         if not path.is_file():
             raise RuntimeError(f"Missing source generation artifact: {path}")
     for source in sources:
         font = glyphsLib.load(str(source))
-        if font.familyName != "Goist" or (font.versionMajor, font.versionMinor) != (1, 0):
-            raise RuntimeError(f"Generated source must declare family Goist and version 1.000: {source}")
-    with tempfile.TemporaryDirectory(prefix="rounded-", dir=BUILD) as temporary:
-        staged = compile_family(config, sources, "Goist", env, jobs, Path(temporary))
-        webfonts(staged)
+        if font.familyName != family.name or (font.versionMajor, font.versionMinor) != (1, 0):
+            raise RuntimeError(f"Generated source must declare family {family.name} and version 1.000: {source}")
+    with tempfile.TemporaryDirectory(prefix="rounded-", dir=build) as temporary:
+        staged = compile_family(config, sources, family.key, env, jobs, Path(temporary))
+        webfonts(staged, family)
         publish(staged, destination, paths)
     record(manifest, state, [destination / path for path in paths] + extras)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
     parser.add_argument("--baseline", action="store_true", help="Build only the unrounded source baseline")
     parser.add_argument("--force", action="store_true", help="Rebuild even when content hashes match")
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 1, 4))
@@ -333,13 +350,16 @@ def main():
     epoch = int(env["SOURCE_DATE_EPOCH"])
     if epoch < 0:
         raise RuntimeError("SOURCE_DATE_EPOCH must be nonnegative")
-    BUILD.mkdir(parents=True, exist_ok=True)
-    config = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-    state = input_state(epoch)
+    family = FAMILIES[args.family]
+    build_dir(family).mkdir(parents=True, exist_ok=True)
+    config = yaml.safe_load((sources_dir(family) / "config.yaml").read_text(encoding="utf-8"))
+    if config.get("familyName") != family.name:
+        raise RuntimeError(f"{sources_dir(family) / 'config.yaml'} must declare familyName {family.name}")
+    state = input_state(family, epoch)
     if args.baseline:
-        baseline(config, state, env, args.jobs, args.force)
+        baseline(family, config, state, env, args.jobs, args.force)
     else:
-        rounded(config, state, env, args.jobs, args.force)
+        rounded(family, config, state, env, args.jobs, args.force)
 
 
 if __name__ == "__main__":

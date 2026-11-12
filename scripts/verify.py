@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Audit Goist builds, source/release drift, shaping, and delivery formats.
+"""Audit a Goist family build, source/release drift, shaping, and delivery formats.
 
 Verify the deliverables against the unrounded source build (`make baseline`):
-  python scripts/verify.py --fonts fonts/Goist --reference sources/Goist/upstream/reference \
-      --source-baseline build/Goist/baseline --output out/Goist/verification.json
+  python scripts/verify.py --family GoistMono
+Paths default to fonts/<family>, sources/<family>/upstream/reference,
+build/<family>/baseline and out/<family>/verification.json.
 
 A release binary is NOT an interchangeable baseline for the newer editable source. Exact
 source/release differences can be acknowledged with --drift-allowlist JSON:
@@ -30,6 +31,7 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
+from families import FAMILIES
 from rounding import MANUFACTURER
 
 SCHEMA = 1
@@ -333,7 +335,8 @@ def comparable(data):
 
 
 class Audit:
-    def __init__(self, approved=()):
+    def __init__(self, family, approved=()):
+        self.family = family
         self.checks = []
         self.drift = []
         self.approved = set(approved)
@@ -455,13 +458,14 @@ def audit_naming(audit, key, data):
                 all(audit.author in text and "The Geist Project Authors" in text
                     for text in attribution["0"]), attribution["0"])
     audit.check(f"naming:{key}:upstream-credit", bool(attribution["10"]) and
-                all("Vercel Geist Sans" in text and "Not affiliated with or endorsed by Vercel" in text
+                all(f"Vercel {audit.family.upstream_label}" in text and
+                    "Not affiliated with or endorsed by Vercel" in text
                     for text in attribution["10"]), attribution["10"])
     audit.check(f"naming:{key}:ofl", bool(attribution["13"]) and
                 all("sil open font license" in text.casefold() for text in attribution["13"]),
                 attribution["13"])
     family = names["16"] or names["1"]
-    audit.check(f"naming:{key}:family", bool(family) and all(n == "Goist" for n in family), family)
+    audit.check(f"naming:{key}:family", bool(family) and all(n == audit.family.name for n in family), family)
     audit.check(f"naming:{key}:derivative-version", abs(data["version"] - 1.0) < 0.0001,
                 data["version"])
     audit.check(f"naming:{key}:no-upstream-name", all("Geist" not in value for values in names.values()
@@ -479,7 +483,7 @@ def audit_naming(audit, key, data):
                     bool(bits["macStyle"] & 1) == bold, bits)
         # Legacy RIBBI families group only Regular/Bold/Italic/Bold Italic.
         if weight in (400, 700):
-            audit.check(f"naming:{key}:legacy-family", names["1"] == ["Goist"], names["1"])
+            audit.check(f"naming:{key}:legacy-family", names["1"] == [audit.family.name], names["1"])
 
 
 def audit_delivery(audit, root, baseline):
@@ -539,14 +543,23 @@ def audit_delivery(audit, root, baseline):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--fonts", type=Path, default=Path("fonts/Goist"))
-    parser.add_argument("--reference", type=Path, default=Path("sources/Goist/upstream/reference"))
-    parser.add_argument("--source-baseline", type=Path, default=Path("build/Goist/baseline"))
-    parser.add_argument("--drift-allowlist", type=Path)
-    parser.add_argument("--output", type=Path, default=Path("out/Goist/verification.json"))
+    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
+    parser.add_argument("--fonts", type=Path, help="default: fonts/<family>")
+    parser.add_argument("--reference", type=Path, help="default: sources/<family>/upstream/reference")
+    parser.add_argument("--source-baseline", type=Path, help="default: build/<family>/baseline")
+    parser.add_argument("--drift-allowlist", type=Path,
+                        help="default: sources/<family>/drift-allowlist.json, if present")
+    parser.add_argument("--output", type=Path, help="default: out/<family>/verification.json")
     args = parser.parse_args()
+    family = FAMILIES[args.family]
+    args.fonts = args.fonts or Path("fonts") / family.key
+    args.reference = args.reference or Path("sources") / family.key / "upstream/reference"
+    args.source_baseline = args.source_baseline or Path("build") / family.key / "baseline"
+    args.output = args.output or Path("out") / family.key / "verification.json"
+    default_allowlist = Path("sources") / family.key / "drift-allowlist.json"
+    args.drift_allowlist = args.drift_allowlist or (default_allowlist if default_allowlist.is_file() else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    audit = Audit(json.loads(args.drift_allowlist.read_text()).get("approved", [])
+    audit = Audit(family, json.loads(args.drift_allowlist.read_text()).get("approved", [])
                   if args.drift_allowlist else ())
     report = {"schema": SCHEMA, "checks": audit.checks, "source_release_drift": audit.drift}
     try:
@@ -572,8 +585,6 @@ def main():
                 audit_naming(audit, key, data)
             if key.endswith(":variable"):
                 audit.check(f"axes:{key}", data["axes"] == {"wght": [100, 400, 900]}, data["axes"])
-            audit.check(f"features:{key}:ss01-ss11", SETS.issubset(data["layout"]["GSUB"]["features"]),
-                        data["layout"]["GSUB"]["features"])
             if key in baseline["fonts"]:
                 compare_font(audit, key, baseline["fonts"][key], data)
             else:

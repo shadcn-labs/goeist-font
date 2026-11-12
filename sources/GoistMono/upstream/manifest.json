@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/vercel/geist-font",
+  "tag": "v1.9.2",
+  "commit": "ef2597cfc42f4797676df105517ccc0a1cfa6569",
+  "reference_sha256": {
+    "GeistMono-Italic[wght].ttf": "632bed258f849dec44d33b3cd2b0c8399821d530c087ed95ac7131016f7f895f",
+    "GeistMono[wght].ttf": "87c2aff9723544a9adaea19d92e42a33705c9723624801b6e0224c2206a6af0d"
+  },
+  "source_version": "1.900",
+  "reference_binary_version": "1.700",
+  "styles": {
+    "GeistMono": {
+      "source_glyphs": 1167,
+      "exported_glyphs": 1158,
+      "unicode_codepoints": 889
+    },
+    "GeistMono-Italic": {
+      "source_glyphs": 1156,
+      "exported_glyphs": 1147,
+      "unicode_codepoints": 889
+    }
+  },
+  "licenses": [
+    "OFL.txt",
+    "LICENSE.txt"
+  ]
+}

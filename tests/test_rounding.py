@@ -1,6 +1,8 @@
 """Focused source-geometry regressions; run with unittest discovery."""
 import copy
+import dataclasses
 import math
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,8 +13,12 @@ from glyphsLib.classes import (
     GSGlyph, GSInstance, GSLayer, GSNode, GSPath,
 )
 
-from scripts.rounding import (
-    Contour, GeometryError, OutlineContext, classify_corner, cross, dot, evaluate, filled,
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+from families import FAMILIES  # noqa: E402
+from rounding import (  # noqa: E402
+    Contour, GeometryError, OutlineContext, add_automatic_ligatures, classify_corner, cross, dot,
+    evaluate, filled,
     point, prepare_corners, proper_intersection, round_font,
     tangent, write_contour,
 )
@@ -269,6 +275,68 @@ class RoundedGeometryTests(unittest.TestCase):
         self.assertEqual(rounded.instances[0].customParameters["fileName"],
                          "Goist-Italic[wght]")
         self.assertEqual(font.instances[0].customParameters["fileName"], "Geist[wght]")
+
+    def test_round_nib_profile_fully_rounds_acute_apex(self):
+        chevron = [(0, 400), (50, 400), (100, 150), (150, 400), (200, 400), (100, 0)]
+
+        def apex_radius(profile):
+            contour = Contour(polygon(chevron))
+            corners, _, exceptions = prepare_corners(contour, [contour.polygon()], 40, profile)
+            self.assertEqual(exceptions, [])
+            return corners[5].radius
+
+        self.assertAlmostEqual(apex_radius(FAMILIES["Goist"].profile), 40 * 0.22)
+        self.assertAlmostEqual(apex_radius(FAMILIES["GoistMono"].profile), 40 * 0.52)
+
+    def test_round_nib_stroke_end_is_circular_not_elliptical(self):
+        contour = Contour(rectangle(width=40, height=400))
+        corners, _, _ = prepare_corners(contour, [contour.polygon()], 40, FAMILIES["GoistMono"].profile)
+        corner = corners[0]  # bottom-left: short bottom edge limits the trim
+        start, end = corner.curve[0], corner.curve[-1]
+        self.assertAlmostEqual(math.dist(start, (0, 0)), math.dist(end, (0, 0)), places=6)
+        self.assertAlmostEqual(corner.radius, 40 * 0.48)
+
+    def test_round_nib_turns_dot_wider_than_stem_into_circle(self):
+        def dot_radii(profile):
+            contour = Contour(rectangle(width=80, height=80))
+            corners, _, _ = prepare_corners(contour, [contour.polygon()], 32, profile)
+            return {round(corner.radius, 6) for corner in corners.values()}
+
+        self.assertEqual(dot_radii(FAMILIES["GoistMono"].profile), {80 * 0.48})
+        self.assertEqual(dot_radii(FAMILIES["Goist"].profile), {round(32 * 0.52, 6)})
+
+    def test_box_drawing_keeps_exact_cell_edge_geometry(self):
+        font = source_font()
+        glyph = GSGlyph("lightHorizontal")
+        glyph.unicodes = ["2500"]
+        for master in font.masters:
+            layer = GSLayer()
+            layer.layerId = layer.associatedMasterId = master.id
+            layer.width = 600
+            layer.paths.append(rectangle(600, 60, 0, 300))
+            glyph.layers.append(layer)
+        font.glyphs.append(glyph)
+        mono = dataclasses.replace(FAMILIES["GoistMono"], automatic_ligatures=False)
+        rounded, report = round_font(font, mono)
+        self.assertEqual([point(n) for n in rounded.glyphs["lightHorizontal"].layers["Regular"].paths[0].nodes],
+                         [(0, 300), (600, 300), (600, 360), (0, 360)])
+        self.assertEqual(report["counts"]["exact_geometry_glyphs"], 1)
+
+    def test_automatic_ligatures_prefer_longest_exported_sequence(self):
+        font = GSFont()
+        for name, export in (("hyphen", True), ("greater", True), ("hyphen_greater.liga", True),
+                             ("hyphen_greater_greater.liga", True), ("greater_greater.liga", False)):
+            glyph = GSGlyph(name)
+            glyph.export = export
+            font.glyphs.append(glyph)
+        font.features.append(GSFeature("ss01", "sub hyphen by greater;"))
+        self.assertEqual(add_automatic_ligatures(font), 2)
+        self.assertEqual([feature.name for feature in font.features], ["liga", "ss01"])
+        self.assertEqual(font.features[0].code.splitlines(),
+                         ["sub hyphen greater greater by hyphen_greater_greater.liga;",
+                          "sub hyphen greater by hyphen_greater.liga;"])
+        with self.assertRaisesRegex(GeometryError, "already defines liga"):
+            add_automatic_ligatures(font)
 
     def test_unsupported_outline_fails_explicitly(self):
         path = rectangle()

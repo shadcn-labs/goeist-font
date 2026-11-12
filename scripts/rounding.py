@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Build editable Goist sources with compatible, stem-relative cubic fillets.
+"""Build editable Goist family sources with compatible, stem-relative cubic fillets.
 
 All geometry is computed in source units, without a Glyphs.app filter. Outlines
 are not overlap-removed: winding tests distinguish exposed ink corners from
 construction corners, and original components and interpolation correspondence
 are retained. Fractional coordinates deliberately survive source serialization.
+Fillet radii come from the family's profile in families.py.
 """
 from __future__ import annotations
 
@@ -18,8 +19,10 @@ from pathlib import Path
 from statistics import median
 
 from glyphsLib import GSFont
-from glyphsLib.classes import CURVE, LINE, OFFCURVE, GSNode
+from glyphsLib.classes import CURVE, LINE, OFFCURVE, GSFeature, GSNode
 import pathops
+
+from families import FAMILIES, SOFT, Family, Profile
 
 EPSILON = 1e-9
 FLATNESS = 0.08
@@ -258,7 +261,7 @@ def scan_stems(polygons, y, upm):
             and filled(polygons, ((left + right) / 2, y))]
 
 
-def measure_stems(font, context):
+def measure_stems(font, context, profile: Profile):
     """Use real vertical ink widths, not a single arbitrary family-wide radius."""
     measurements = {}
     for master in font.masters:
@@ -276,8 +279,8 @@ def measure_stems(font, context):
         measurements[master.id] = {
             "name": master.name, "weight": master.weightValue,
             "stem": median(samples), "samples": samples,
-            "terminal_radius": median(samples) * 0.52,
-            "join_radius": median(samples) * 0.22,
+            "terminal_radius": median(samples) * profile.terminal,
+            "acute_radius": median(samples) * profile.acute,
         }
     return measurements
 
@@ -297,7 +300,7 @@ def ink_side(polygons, position, direction, probe):
     return 1 if left and not right else -1 if right and not left else 0
 
 
-def classify_corner(contour, index, polygons, stem):
+def classify_corner(contour, index, polygons, stem, profile: Profile = SOFT):
     node = contour.nodes[index]
     if node.smooth:
         return "smooth", None
@@ -321,15 +324,38 @@ def classify_corner(contour, index, polygons, stem):
         return "hidden_or_overlapping_construction_corner", None
     if turn * side_in < 0:
         return "concave_ink_join_or_counter", None
-    # Restrained acute joins; squared stem endings receive almost a semicircle.
-    radius = stem * (0.52 if abs(turn) <= math.radians(110) else 0.22)
+    radius = stem * (profile.terminal if abs(turn) <= math.radians(110) else profile.acute)
     return "convex", (radius, abs(turn))
 
 
-def make_corner(contour, index, radius, angle):
+def convex_polygon_width(contour):
+    """Minimum caliper width of an all-line convex contour, else None.
+
+    Under a round nib such a contour (dot, bar, slash, comma) is a stadium or a
+    circle whose radius is half this width.
+    """
+    if any(len(segment.points) != 2 for segment in contour.segments):
+        return None
+    points = [segment.points[0] for segment in contour.segments if segment.length > EPSILON]
+    edges = [sub(q, p) for p, q in zip(points, points[1:] + points[:1])]
+    turns = [cross(u, v) for u, v in zip(edges, edges[1:] + edges[:1])]
+    if len(edges) < 3 or not (all(t >= -EPSILON for t in turns) or all(t <= EPSILON for t in turns)):
+        return None
+    return min(max(abs(cross(unit(edge), sub(point, origin))) for point in points)
+               for origin, edge in zip(points, edges))
+
+
+def make_corner(contour, index, radius, angle, circular=False):
     incoming, outgoing = contour.segments[index - 1], contour.segments[index]
     trim = radius * math.tan(angle / 2)
-    trim_in, trim_out = min(trim, incoming.length * 0.48), min(trim, outgoing.length * 0.48)
+    limit_in, limit_out = incoming.length * 0.48, outgoing.length * 0.48
+    if circular:
+        # A round tool leaves circular arcs: shrink the radius until both
+        # trims fit, so short stroke ends become semicircles, not ellipses.
+        trim_in = trim_out = min(trim, limit_in, limit_out)
+        radius = trim_in / math.tan(angle / 2)
+    else:
+        trim_in, trim_out = min(trim, limit_in), min(trim, limit_out)
     t_in = incoming.parameter(incoming.length - trim_in)
     t_out = outgoing.parameter(trim_out)
     left = section(incoming.points, 0, t_in)
@@ -374,10 +400,12 @@ def safe_corner(corner, contour, index, polygons):
     return True
 
 
-def prepare_corners(contour, polygons, stem):
+def prepare_corners(contour, polygons, stem, profile: Profile = SOFT):
     corners, reasons, exceptions = {}, Counter(), []
+    width = convex_polygon_width(contour) if profile.stadium else None
+    stadium = min(width / 2, profile.stadium * stem) if width else None
     for index in range(len(contour.nodes)):
-        reason, proposal = classify_corner(contour, index, polygons, stem)
+        reason, proposal = classify_corner(contour, index, polygons, stem, profile)
         reasons[reason] += 1
         if proposal is None:
             if reason in {"zero_length_construction_edge", "reversing_construction_corner",
@@ -385,10 +413,13 @@ def prepare_corners(contour, polygons, stem):
                 exceptions.append({"node": contour.indices[index], "reason": reason})
             continue
         radius, angle = proposal
+        if stadium:
+            reasons["stadium"] += 1
+            radius = max(radius, stadium)
         failure = None
         for attempt in range(9):
             try:
-                corner = make_corner(contour, index, radius / 2 ** attempt, angle)
+                corner = make_corner(contour, index, radius / 2 ** attempt, angle, profile.circular)
                 if safe_corner(corner, contour, index, polygons):
                     corners[index] = corner
                     if attempt:
@@ -460,9 +491,9 @@ def layer_stem(layer, masters):
     return masters[key]["stem"]
 
 
-def rename_metadata(font, family):
+def rename_metadata(font, family: Family):
     old_family = font.familyName
-    font.familyName = family
+    font.familyName = family.name
     font.versionMajor, font.versionMinor = 1, 0
     name_keys = {"familyName", "postscriptFontName", "postscriptFullName", "fileName",
                  "variableFontFamilyName", "variableFontName", "variableFileName",
@@ -476,21 +507,22 @@ def rename_metadata(font, family):
     for owner in (font, *font.masters, *font.instances):
         for parameter in owner.customParameters:
             if parameter.name in name_keys and isinstance(parameter.value, str):
-                parameter.value = parameter.value.replace(old_family, family)
+                parameter.value = parameter.value.replace(old_family, family.name).replace(
+                    family.upstream_key, family.key)
                 if parameter.name in {"fileName", "variableFileName"} and is_italic:
-                    parameter.value = parameter.value.replace(f"{family}[", f"{family}-Italic[")
+                    parameter.value = parameter.value.replace(f"{family.key}[", f"{family.key}-Italic[")
         for prop in getattr(owner, "properties", []):
             if prop.key in property_keys:
                 if prop.key == "versionString":
                     prop.value = "Version 1.000"
                 elif isinstance(prop.value, str):
-                    prop.value = prop.value.replace(old_family, family)
+                    prop.value = prop.value.replace(old_family, family.name)
                 if prop._localized_values:
                     for language, value in prop._localized_values.items():
                         if isinstance(value, str):
                             prop._localized_values[language] = (
                                 "Version 1.000" if prop.key == "versionString"
-                                else value.replace(old_family, family))
+                                else value.replace(old_family, family.name))
     author_file = Path(__file__).resolve().parent.parent / "AUTHORS.txt"
     author_record = next((line.strip() for line in author_file.read_text(encoding="utf-8").splitlines()
                           if line.strip() and not line.lstrip().startswith("#")), "")
@@ -498,7 +530,8 @@ def rename_metadata(font, family):
     if not author:
         raise GeometryError("AUTHORS.txt must identify the Goist author")
     font.properties["descriptions"] = (
-        f"Goist by {author}, developed under {MANUFACTURER}. Rounded derivative of Vercel Geist Sans. "
+        f"{family.name} by {author}, developed under {MANUFACTURER}. "
+        f"Rounded derivative of Vercel {family.upstream_label}. "
         f"Original design: {font.designer}. Original publishers and contributors: {font.manufacturer}. "
         "Upstream: https://github.com/vercel/geist-font. "
         "Not affiliated with or endorsed by Vercel, Inc."
@@ -513,7 +546,7 @@ def rename_metadata(font, family):
     font.designerURL = DESIGNER_URL
     font.manufacturerURL = MANUFACTURER_URL
     # Preserve the exact inherited notice (including every localized value).
-    notice = f"Copyright 2026 {author} (Goist modifications and rounded outlines)"
+    notice = f"Copyright 2026 {author} ({family.name} modifications and rounded outlines)"
     copyrights = [prop for prop in font.properties if prop.key == "copyrights"]
     if not copyrights:
         font.copyright = notice
@@ -527,16 +560,50 @@ def rename_metadata(font, family):
     # The inherited license and feature labels remain unchanged.
 
 
-def round_font(original, family="Goist"):
+def add_automatic_ligatures(font):
+    """Add the `liga` feature Glyphs.app generates from exported `a_b.liga` names.
+
+    Longest sequences come first so `->>` wins over `->`. Applied identically to
+    the unrounded baseline and the rounded source.
+    """
+    if any(feature.name == "liga" for feature in font.features):
+        raise GeometryError("Source already defines liga; automatic ligatures would duplicate it")
+    exported = {glyph.name for glyph in font.glyphs if glyph.export}
+    rules = []
+    for name in sorted(exported):
+        parts = name[:-len(".liga")].split("_") if name.endswith(".liga") else []
+        if len(parts) > 1 and all(part in exported for part in parts):
+            rules.append((parts, name))
+    if not rules:
+        raise GeometryError("No exported `a_b.liga` glyphs to build liga from")
+    rules.sort(key=lambda rule: (-len(rule[0]), rule[1]))
+    feature = GSFeature("liga", "\n".join(f"sub {' '.join(parts)} by {name};" for parts, name in rules))
+    feature.automatic = True
+    stylistic = next((i for i, item in enumerate(font.features) if item.name.startswith("ss")),
+                     len(font.features))
+    font.features.insert(stylistic, feature)
+    return len(rules)
+
+
+def exact_geometry(glyph, font, codepoints):
+    """True for glyphs (or `.suffix` alternates of glyphs) encoded in `codepoints`."""
+    if not codepoints:
+        return False
+    base = font.glyphs[glyph.name.split(".")[0]] or glyph
+    return any(int(code, 16) in codepoints for code in base.unicodes or ())
+
+
+def round_font(original, family: Family = FAMILIES["Goist"]):
     """Return a deep-copied GSFont plus a machine-readable geometry audit."""
     font = copy.deepcopy(original)
     context = OutlineContext(original)
-    masters = measure_stems(original, context)
+    masters = measure_stems(original, context, family.profile)
     report = {
-        "family": family, "version": "1.000", "upm": original.upm,
+        "family": family.name, "version": "1.000", "upm": original.upm,
         "original_family": original.familyName,
         "original_version": f"{original.versionMajor}.{original.versionMinor:03d}",
-        "algorithm": "exposed-convex-cubic-fillet-v1", "flatness": FLATNESS,
+        "algorithm": "exposed-convex-cubic-fillet-v1", "profile": family.profile.name,
+        "flatness": FLATNESS,
         "masters": masters, "glyphs": [], "counts": Counter(), "exceptions": [],
         "coordinate_policy": "fractional source coordinates; no pre-cu2qu integer rounding",
     }
@@ -544,6 +611,11 @@ def round_font(original, family="Goist"):
         layers = design_layers(glyph, font)
         item = {"name": glyph.name, "export": bool(glyph.export), "layers": [],
                 "rounded_corners": 0, "compatible_support_cubics": 0}
+        if exact_geometry(glyph, font, family.exact_geometry):
+            item["exact_geometry"] = True
+            report["counts"]["exact_geometry_glyphs"] += 1
+            report["glyphs"].append(item)
+            continue
         # Special alternate layers may have genuinely different topology. Group
         # by full shape signature, retaining correspondence within each group.
         groups = {}
@@ -575,7 +647,7 @@ def round_font(original, family="Goist"):
                 for path_index, contour in enumerate(contours):
                     try:
                         corners, reasons, reductions = prepare_corners(
-                            contour, polygons, layer_stem(layer, masters))
+                            contour, polygons, layer_stem(layer, masters), family.profile)
                     except GeometryError as error:
                         raise GeometryError(f"{glyph.name}/{layer.name}/path {path_index}: {error}") from error
                     decisions.append(corners)
@@ -615,6 +687,8 @@ def round_font(original, family="Goist"):
                 report["counts"]["anchors"] += entry["anchors"]
         report["glyphs"].append(item)
     rename_metadata(font, family)
+    if family.automatic_ligatures:
+        report["automatic_ligatures"] = add_automatic_ligatures(font)
     report["counts"]["glyphs"] = len(font.glyphs)
     report["counts"]["exported_glyphs"] = sum(bool(glyph.export) for glyph in font.glyphs)
     return font, report
@@ -625,10 +699,10 @@ def main(argv=None):
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
-    parser.add_argument("--family", default="Goist")
+    parser.add_argument("--family", default="Goist", choices=sorted(FAMILIES))
     args = parser.parse_args(argv)
     try:
-        font, report = round_font(GSFont(args.source), args.family)
+        font, report = round_font(GSFont(args.source), FAMILIES[args.family])
     except GeometryError as error:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps({"status": "failed", "source": str(args.source),

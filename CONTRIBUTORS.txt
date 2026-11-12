@@ -9,7 +9,7 @@
 # Names should be added to this file as:
 # Name <email address>
 
-Upstream font: Vercel Geist Sans (https://github.com/vercel/geist-font)
+Upstream fonts: Vercel Geist Sans and Geist Mono (https://github.com/vercel/geist-font)
 Original Geist contributors:
 Andrés Briganti <info@briganti.works>
 Mateo Zaragoza <mateo@basement.studio>

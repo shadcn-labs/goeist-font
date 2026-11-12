@@ -1,6 +1,6 @@
-Copyright 2026 Aniket-508 (Goist modifications and rounded outlines)
+Copyright 2026 Aniket-508 (Goist and Goist Mono modifications and rounded outlines)
 
-Upstream Geist Sans copyright notices:
+Upstream Geist Sans and Geist Mono copyright notices:
 Copyright (c) 2023 Vercel, in collaboration with basement.studio
 Copyright 2024, 2026 The Geist Project Authors (https://github.com/vercel/geist-font)
 

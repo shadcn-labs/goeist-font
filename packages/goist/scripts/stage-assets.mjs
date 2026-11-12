@@ -7,13 +7,16 @@ import { fileURLToPath } from "node:url";
 const pkg = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repo = join(pkg, "..", "..");
 
-// Add { family: "GoistMono", slug: "goist-mono" } once fonts/GoistMono/ exists.
-const FAMILIES = [{ family: "Goist", slug: "goist-sans" }];
+// `css` is the stylesheet stem written by scripts/build.py; `slug` names the package directory.
+const FAMILIES = [
+  { family: "Goist", css: "goist", slug: "goist-sans" },
+  { family: "GoistMono", css: "goist-mono", slug: "goist-mono" },
+];
 
 // Bracketed axis names are renamed so bundlers never see `[...]` in asset paths.
 const variableName = (file) => file.replace(/\[wght\]\.woff2$/, "-Variable.woff2");
 
-for (const { family, slug } of FAMILIES) {
+for (const { family, css: stem, slug } of FAMILIES) {
   const source = join(repo, "fonts", family, "webfonts");
   if (!existsSync(source)) {
     console.error(`Missing ${source}. Run \`make build\` in the repository root first.`);
@@ -29,11 +32,11 @@ for (const { family, slug } of FAMILIES) {
     copyFileSync(join(source, file), join(target, variableName(file)));
     fonts += 1;
   }
-  const cssName = (file) => file.replace(family.toLowerCase(), slug);
+  const cssName = (file) => file.replace(new RegExp(`^${stem}(-static)?\\.css$`), `${slug}$1.css`);
   for (const file of files.filter((name) => name.endsWith(".css"))) {
     const css = readFileSync(join(source, file), "utf8")
       .replace(/[\w-]+\[wght\]\.woff2/g, variableName)
-      .replace(new RegExp(`\\b${family.toLowerCase()}(-static)?\\.css\\b`, "g"), cssName);
+      .replace(new RegExp(`\\b${stem}(-static)?\\.css\\b`, "g"), (name) => cssName(name));
     writeFileSync(join(target, cssName(file)), css);
   }
   console.log(`Staged ${fonts} ${family} webfonts → assets/${slug}/`);

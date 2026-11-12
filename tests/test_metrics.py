@@ -1,13 +1,17 @@
 """Static CFF metrics must agree with their encoded charstring advances."""
 import io
+import sys
 import unittest
+from pathlib import Path
 
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 from fontTools.ttLib import TTFont
 
-from scripts.build import align_static_advances
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+from build import align_static_advances  # noqa: E402
 
 
 def cff_font():
