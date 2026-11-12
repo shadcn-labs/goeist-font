@@ -1,7 +1,7 @@
 {
   "name": "goist",
   "version": "1.0.0",
-  "description": "Goist, a rounded typeface based on Vercel Geist Sans, for next/font and plain CSS.",
+  "description": "Goist, a rounded typeface by Aniket-508 developed under Shadcn Labs and based on Geist Sans, for next/font and plain CSS.",
   "type": "module",
   "license": "OFL-1.1",
   "author": "Aniket-508 <pawaraniket508@gmail.com>",

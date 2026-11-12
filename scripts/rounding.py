@@ -23,6 +23,10 @@ import pathops
 
 EPSILON = 1e-9
 FLATNESS = 0.08
+# Designer (name ID 9) is the first AUTHORS.txt entry; Goist is developed under Shadcn Labs.
+MANUFACTURER = "Shadcn Labs"
+MANUFACTURER_URL = "https://shadcn-labs.com/font"
+DESIGNER_URL = "https://github.com/Aniket-508"
 
 
 class GeometryError(ValueError):
@@ -494,19 +498,20 @@ def rename_metadata(font, family):
     if not author:
         raise GeometryError("AUTHORS.txt must identify the Goist author")
     font.properties["descriptions"] = (
-        f"Goist by {author}. Rounded derivative of Vercel Geist Sans. "
+        f"Goist by {author}, developed under {MANUFACTURER}. Rounded derivative of Vercel Geist Sans. "
         f"Original design: {font.designer}. Original publishers and contributors: {font.manufacturer}. "
-        "Upstream: https://github.com/vercel/geist-font"
+        "Upstream: https://github.com/vercel/geist-font. "
+        "Not affiliated with or endorsed by Vercel, Inc."
     )
     font.designer = author
-    font.manufacturer = author
+    font.manufacturer = MANUFACTURER
     # glyphsLib's setters do not replace existing localized values.
     for prop in font.properties:
         if prop.key in {"designers", "manufacturers"} and prop._localized_values:
             for language in prop._localized_values:
-                prop._localized_values[language] = author
-    font.designerURL = "https://github.com/shadcn-labs/goist"
-    font.manufacturerURL = "https://github.com/shadcn-labs/goist"
+                prop._localized_values[language] = author if prop.key == "designers" else MANUFACTURER
+    font.designerURL = DESIGNER_URL
+    font.manufacturerURL = MANUFACTURER_URL
     # Preserve the exact inherited notice (including every localized value).
     notice = f"Copyright 2026 {author} (Goist modifications and rounded outlines)"
     copyrights = [prop for prop in font.properties if prop.key == "copyrights"]

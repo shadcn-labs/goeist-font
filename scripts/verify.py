@@ -30,6 +30,8 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
+from rounding import MANUFACTURER
+
 SCHEMA = 1
 WEIGHTS = tuple(range(100, 901, 100))
 INTERMEDIATES = (250, 550, 850)
@@ -448,12 +450,13 @@ def audit_naming(audit, key, data):
     names = data["names"]
     attribution = data["attribution"]
     audit.check(f"naming:{key}:designer", attribution["9"] == [audit.author], attribution["9"])
-    audit.check(f"naming:{key}:manufacturer", attribution["8"] == [audit.author], attribution["8"])
+    audit.check(f"naming:{key}:manufacturer", attribution["8"] == [MANUFACTURER], attribution["8"])
     audit.check(f"naming:{key}:copyright", bool(attribution["0"]) and
                 all(audit.author in text and "The Geist Project Authors" in text
                     for text in attribution["0"]), attribution["0"])
     audit.check(f"naming:{key}:upstream-credit", bool(attribution["10"]) and
-                all("Vercel Geist Sans" in text for text in attribution["10"]), attribution["10"])
+                all("Vercel Geist Sans" in text and "Not affiliated with or endorsed by Vercel" in text
+                    for text in attribution["10"]), attribution["10"])
     audit.check(f"naming:{key}:ofl", bool(attribution["13"]) and
                 all("sil open font license" in text.casefold() for text in attribution["13"]),
                 attribution["13"])

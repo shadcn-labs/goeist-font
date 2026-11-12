@@ -1,6 +1,6 @@
 # Goist
 
-A rounded typeface by Aniket-508, based on [Vercel Geist Sans](https://github.com/vercel/geist-font). Nine weights (100–900) with genuine italics, as variable and static WOFF2.
+Goist is a font family created by [Aniket-508](https://github.com/Aniket-508), developed under [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded derivative of [Geist Sans](https://github.com/vercel/geist-font), created by Vercel in collaboration with Basement Studio. Nine weights (100–900) with genuine italics, as variable and static WOFF2.
 
 ```sh
 npm install goist
@@ -57,4 +57,8 @@ body {
 
 ## License
 
-SIL Open Font License 1.1. Goist is an independent derivative of Geist, not an official Vercel release.
+This Font Software is licensed under the SIL Open Font License, Version 1.1. Goist's rounded design and modifications are copyright 2026 Aniket-508; the original Geist copyright notices are included in `LICENSE.txt`.
+
+## Disclaimer
+
+Goist is an independent project. It is not affiliated with, sponsored by or endorsed by Vercel, Inc., and is not an official Geist release. Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries.
