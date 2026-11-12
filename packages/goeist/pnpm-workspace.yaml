@@ -1,1 +1,3 @@
 minimumReleaseAge: 2880
+# next is an optional peer for consumers; the package itself only needs Changesets.
+autoInstallPeers: false
