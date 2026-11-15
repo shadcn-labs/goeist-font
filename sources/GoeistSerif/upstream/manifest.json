@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/vercel/geist-font",
+  "tag": "v1.9.2",
+  "commit": "ef2597cfc42f4797676df105517ccc0a1cfa6569",
+  "reference_sha256": {
+    "GeistSerif[ELSH].ttf": "fd2039ee75e966b3672dd61fa75dcc5395b3c7c296c1dbb1863ddcdfcafaf91b",
+    "GeistSerif-Regular.ttf": "22c4da0b51f73840378a0a6ea74d018c6e5b476475b01a5f15a3a306f798c9d5",
+    "GeistSerif-Square.ttf": "4612a130e6e0fdf8c8ec8f1548974f6985781db4a9fbc6a5f06f802bbc8349d4",
+    "GeistSerif-Triangle.ttf": "0a3d8b5c82427ea0662228bc9f592453025106a549c39b9d5cb9f0bf261d4d91",
+    "GeistSerif-Heart.ttf": "568f750450cfc5af5a68b8582d584357d470a3eb660584dca11d9ca121d615e2"
+  },
+  "source_version": "1.003",
+  "scripts": {
+    "glyphs_corners.py": "Places Glyphs corner and cap components and strokes (scripts/glyphs_corners.py)",
+    "build-geist-serif.py": "Upstream build; Goeist Serif reuses its post-compile table helpers (scripts/build-geist-serif.py)"
+  },
+  "licenses": [
+    "OFL.txt",
+    "LICENSE.txt"
+  ],
+  "reference_binary_version": "1.003",
+  "exported_glyphs_per_style": 898,
+  "unicode_codepoints_per_style": 465
+}

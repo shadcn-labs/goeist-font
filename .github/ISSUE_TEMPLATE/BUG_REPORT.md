@@ -1,6 +1,6 @@
 ---
 name: Font Issue Report
-about: Report issues or bugs with Goeist Sans or Goeist Mono fonts.
+about: Report issues or bugs with Goeist Sans, Goeist Mono or Goeist Serif fonts.
 title: ''
 labels: 'bug'
 assignees: ''
@@ -8,9 +8,10 @@ assignees: ''
 
 <!-- Adapted from https://github.com/vercel/geist-font/blob/main/.github/ISSUE_TEMPLATE/BUG_REPORT.md -->
 
-**Font Name (Goeist Sans/Goeist Mono):**
+**Font Name (Goeist Sans/Goeist Mono/Goeist Serif):**
 - [ ] Goeist Sans
 - [ ] Goeist Mono
+- [ ] Goeist Serif
 
 **Description of the Issue:**
 Please describe the problem clearly.

@@ -1,0 +1,34 @@
+Goeist Serif 1.000: FONTLOG
+
+Goeist Serif is a rounded derivative of Geist Serif. Every outline comes from the
+upstream source; advances, kerning, OpenType features, character map and vertical metrics
+are kept, and only corners, serif ends and stroke endings change.
+
+Base
+  Geist Serif, https://github.com/vercel/geist-font v1.9.2 (ef2597cfc42f4797676df105517ccc0a1cfa6569)
+  Source version 1.003. Licence: SIL Open Font License 1.1, no Reserved Font Name.
+  Original design: WORDMARK, Mark Davis, Andrés Briganti, Evil Rabbit.
+  Variable axis: ELSH 0-100, default 0; upright variable fonts. Static styles: Regular, Square, Triangle, Heart.
+
+Modifications
+  Rounding profile 'soft-serif': squared ends and outer corners 0.33 stem, acute corners 0.22 stem,
+  circular arcs, radius at most 0.5 x the stroke across the corner.
+  Concave joins, counters and hidden overlap corners keep their drawn construction.
+
+  Upright: measured stems Regular 94.0 units.
+    634 corners rounded over 916 design layers, 0 with a locally reduced radius, 0 zero-length support curves for interpolation.
+    226 serif tips thickened to 26 units and closed with a half-round of 13 at their original reach.
+    89 cut terminals and 2 spikes capped with the inscribed 13-unit circle.
+    185 layers had open corners and overlaps removed before rounding.
+
+  Collision guard (minimum ink gap 4 units): pairs the rounded serif tips brought closer than
+  the upstream fonts are opened by one added kern lookup, never closed:
+    GoeistSerif[ELSH]: 368 pairs, widest opening 20 units
+    GoeistSerif-Regular: 368 pairs, widest opening 20 units
+    GoeistSerif-Square: 224 pairs, widest opening 20 units
+    GoeistSerif-Triangle: 268 pairs, widest opening 20 units
+    GoeistSerif-Heart: 267 pairs, widest opening 20 units
+
+Acknowledgements
+  Geist Serif by WORDMARK, Mark Davis, Andrés Briganti, Evil Rabbit, published by Vercel under the SIL Open Font License 1.1.
+  Goeist Serif is independent and not affiliated with or endorsed by Vercel, Inc.

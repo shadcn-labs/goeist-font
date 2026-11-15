@@ -31,21 +31,11 @@ import yaml
 
 from families import FAMILIES, FONT_VERSION, FONT_VERSION_STRING, Family
 from rounding import add_automatic_ligatures
+import serif
 
 ROOT = Path(__file__).resolve().parent.parent
-STYLES = (
-    (100, "Thin"), (200, "ExtraLight"), (300, "Light"),
-    (400, "Regular"), (500, "Medium"), (600, "SemiBold"),
-    (700, "Bold"), (800, "ExtraBold"), (900, "Black"),
-)
 # A fixed release epoch, overridable explicitly for reproducible release builds.
 DEFAULT_EPOCH = 1767225600
-
-
-def styles():
-    for weight, name in STYLES:
-        yield weight, name, "normal"
-        yield weight, "Italic" if name == "Regular" else name + "Italic", "italic"
 
 
 def sources_dir(family: Family) -> Path:
@@ -56,18 +46,95 @@ def build_dir(family: Family) -> Path:
     return ROOT / "build" / family.key
 
 
-def expected_paths(prefix: str, css: str | None = None) -> list[Path]:
+def expected_paths(family: Family, prefix: str, css: str | None = None) -> list[Path]:
     """Every release file for `prefix`; webfonts and stylesheets only with `css`."""
-    paths = [Path(kind) / f"{prefix}-{name}.{kind}"
-             for kind in ("ttf", "otf") for _, name, _ in styles()]
-    variables = [f"{prefix}[wght]", f"{prefix}-Italic[wght]"]
+    paths = [Path(kind) / f"{prefix}-{style.name}.{kind}"
+             for kind in ("ttf", "otf") for style in family.styles]
+    variables = [family.variable_stem(prefix, slope) for slope in family.slopes]
     paths += [Path("variable") / f"{name}.ttf" for name in variables]
     if css:
-        paths += [Path("webfonts") / f"{prefix}-{name}.woff2"
-                  for _, name, _ in styles()]
+        paths += [Path("webfonts") / f"{prefix}-{style.name}.woff2" for style in family.styles]
         paths += [Path("webfonts") / f"{name}.woff2" for name in variables]
         paths += [Path("webfonts") / name for name in (f"{css}.css", f"{css}-static.css")]
+        paths.append(Path("FONTLOG.txt"))
     return paths
+
+
+def fontlog(family: Family, reports: list[Path], guard_report: Path | None,
+            static_reports: list[Path] = ()) -> str:
+    """FONTLOG.txt: the base, its licence, and every modification with its numbers."""
+    upstream = sources_dir(family) / "upstream"
+    manifest = json.loads((upstream / "manifest.json").read_text(encoding="utf-8"))
+    info = glyphsLib.load(str(upstream / f"{family.upstream_packages[0]}.glyphspackage"))
+    profile = family.profile
+    tag, low, default, high = family.axis
+    styles = ", ".join(style.name for style in family.styles)
+    lines = [
+        f"{family.name} {FONT_VERSION_STRING}: FONTLOG", "",
+        f"{family.name} is a rounded derivative of {family.upstream_label}. Every outline comes from the",
+        "upstream source; advances, kerning, OpenType features, character map and vertical metrics",
+        "are kept, and only corners, serif ends and stroke endings change.", "",
+        "Base",
+        f"  {family.upstream_name}, {manifest['repository']} {manifest['tag']} ({manifest['commit']})",
+        f"  Source version {manifest['source_version']}. Licence: SIL Open Font License 1.1,"
+        " no Reserved Font Name.",
+        f"  Original design: {info.designer}.",
+        f"  Variable axis: {tag} {low}-{high}, default {default}; "
+        f"{' and '.join(family.slopes)} variable fonts. Static styles: {styles}.", "",
+        "Modifications",
+        f"  Rounding profile '{profile.name}': squared ends and outer corners {profile.terminal} stem,"
+        f" acute corners {profile.acute} stem,",
+        f"  {'circular arcs' if profile.circular else 'arcs trimmed per edge'}"
+        + (f", straight convex contours as stadiums up to {profile.stadium} stem" if profile.stadium else "")
+        + (f", radius at most {profile.local} x the stroke across the corner" if profile.local else "")
+        + ".",
+        "  Concave joins, counters and hidden overlap corners keep their drawn construction.",
+    ]
+    if family.exact_geometry:
+        lines.append(f"  U+{family.exact_geometry.start:04X}-U+{family.exact_geometry.stop - 1:04X}"
+                     " keep their exact upstream outlines.")
+    if family.automatic_ligatures:
+        lines.append("  The liga feature Glyphs.app derives from `a_b.liga` glyph names is recreated.")
+    for slope, path in zip(family.slopes, reports):
+        report = json.loads(path.read_text(encoding="utf-8"))
+        counts = report["counts"]
+        stems = ", ".join(f"{m['name']} {m['stem']:.1f}" for m in report["masters"].values())
+        reductions = sum(e["reason"] == "local_radius_reduction" for e in report["exceptions"])
+        lines += ["", f"  {slope.title()}: measured stems {stems} units.",
+                  f"    {counts['rounded_corners']} corners rounded over {counts['design_layers']} design layers,"
+                  f" {reductions} with a locally reduced radius,"
+                  f" {counts.get('compatible_support_cubics', 0)} zero-length support curves for interpolation."]
+        joins = counts.get("interpolation_join_ratios", 0)
+        if joins:
+            lines.append(f"    {joins} fillet joins on turning curves given one handle ratio in every master;"
+                         f" {counts.get('interpolation_join_ratios_kept', 0)} kept circular handles, so the variable"
+                         " font can still bend at those joins between masters.")
+        shape = report.get("soft_serif")
+        if shape:
+            lines += [f"    {shape['softened']} serif tips thickened to {shape['tip']} units and closed with a"
+                      f" half-round of {shape['tip'] / 2:g} at their original reach.",
+                      f"    {shape.get('terminal_capped', 0)} cut terminals and {shape.get('spike_capped', 0)}"
+                      f" spikes capped with the inscribed {shape['cap']}-unit circle.",
+                      f"    {shape['overlaps_removed']} layers had open corners and overlaps removed before"
+                      " rounding."]
+    for slope, path in zip(family.slopes, static_reports):
+        counts = json.loads(path.read_text(encoding="utf-8"))["counts"]
+        lines.append(f"  {slope.title()} static instances: every named weight rounded from its own interpolated"
+                     f" outline ({counts['intermediate_layers']} intermediate layers), not interpolated"
+                     " between rounded masters.")
+    if guard_report:
+        guard = json.loads(guard_report.read_text(encoding="utf-8"))
+        lines += ["", f"  Collision guard (minimum ink gap {guard['min_gap']} units): pairs the rounded serif"
+                      " tips brought closer than",
+                  "  the upstream fonts are opened by one added kern lookup, never closed:"]
+        for name, pairs in guard["fonts"].items():
+            widest = max((units for _, _, units in pairs), default=0)
+            lines.append(f"    {name}: {len(pairs)} pairs, widest opening {widest} units")
+    lines += ["", "Acknowledgements",
+              f"  {family.upstream_label} by {info.designer}, published by Vercel under the SIL Open Font"
+              " License 1.1.",
+              f"  {family.name} is independent and not affiliated with or endorsed by Vercel, Inc.", ""]
+    return "\n".join(lines)
 
 
 def sha256(path: Path) -> str:
@@ -83,7 +150,12 @@ def input_state(family: Family, epoch: int) -> dict:
     files = [sources_dir(family) / "config.yaml", ROOT / "requirements.txt", ROOT / "requirements.in",
              ROOT / "scripts/build.py", ROOT / "scripts/rounding.py", ROOT / "scripts/families.py",
              ROOT / "AUTHORS.txt"]
-    for name in (family.upstream_key, family.upstream_key + "-Italic"):
+    files += [ROOT / "scripts/collisions.py"]
+    if family.element_shapes:
+        files += [ROOT / "scripts/serif.py", *sorted((upstream / "scripts").glob("*.py")),
+                  *sorted((upstream / "reference").glob("*.ttf"))]
+    files.append(upstream / "manifest.json")
+    for name in family.upstream_packages:
         package = upstream / f"{name}.glyphspackage"
         if not package.is_dir():
             raise RuntimeError(f"Missing vendored source package: {package}")
@@ -133,13 +205,13 @@ def run(command: list[str], env: dict, cwd: Path = ROOT):
     subprocess.run(command, check=True, cwd=cwd, env=env)
 
 
-def require_exports(directory: Path, prefix: str):
-    for relative in expected_paths(prefix):
+def require_exports(directory: Path, family: Family, prefix: str):
+    for relative in expected_paths(family, prefix):
         path = directory / relative
         if not path.is_file() or path.stat().st_size == 0:
             raise RuntimeError(f"Compiler did not produce required export: {path}")
     for kind in ("ttf", "otf", "variable"):
-        expected = {path.name for path in expected_paths(prefix)
+        expected = {path.name for path in expected_paths(family, prefix)
                     if path.parts[0] == kind}
         actual = {path.name for path in (directory / kind).glob("*") if path.is_file()}
         if actual != expected:
@@ -175,17 +247,17 @@ def align_static_advances(font: TTFont, advances: dict[str, int]) -> list[str]:
     return changed
 
 
-def normalize_static_advances(directory: Path, family: str):
-    for style, variable_name in (("normal", family), ("italic", family + "-Italic")):
-        with TTFont(directory / "variable" / f"{variable_name}[wght].ttf",
+def normalize_static_advances(directory: Path, family: Family, prefix: str):
+    for slope in family.slopes:
+        with TTFont(directory / "variable" / f"{family.variable_stem(prefix, slope)}.ttf",
                     recalcTimestamp=False) as variable:
-            for weight, name, instance_style in styles():
-                if instance_style != style:
+            for style in family.styles:
+                if style.slope != slope:
                     continue
-                glyphs = variable.getGlyphSet(location={"wght": weight})
+                glyphs = variable.getGlyphSet(location=dict(style.location))
                 advances = {glyph: otRound(glyphs[glyph].width) for glyph in variable.getGlyphOrder()}
                 for kind in ("ttf", "otf"):
-                    path = directory / kind / f"{family}-{name}.{kind}"
+                    path = directory / kind / f"{prefix}-{style.name}.{kind}"
                     with TTFont(path, recalcTimestamp=False) as font:
                         changed = align_static_advances(font, advances)
                         if changed:
@@ -193,21 +265,48 @@ def normalize_static_advances(directory: Path, family: str):
                             font.save(path)
 
 
-def compile_family(config: dict, source_paths: list[Path], family: str,
-                   env: dict, jobs: int, workspace: Path) -> Path:
-    config = dict(config)
+def _gftools(config: dict, source_paths: list[Path], env: dict, jobs: int, workspace: Path, **overrides) -> Path:
+    workspace.mkdir(parents=True, exist_ok=True)
+    config = dict(config, **overrides)
     config["sources"] = [os.path.relpath(path, workspace) for path in source_paths]
     config["outputDir"] = "fonts"
     # Do not inherit directory overrides that would escape staging.
     for key in ("vfDir", "ttDir", "otDir", "woffDir"):
         config.pop(key, None)
-    config_path = workspace / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    (workspace / "config.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     run([sys.executable, "-m", "gftools.builder", "--no-ninja", "config.yaml"], env, workspace)
     run(["ninja", "-j", str(jobs), "-f", "build.ninja"], env, workspace)
-    directory = workspace / "fonts"
-    require_exports(directory, family)
-    normalize_static_advances(directory, family)
+    return workspace / "fonts"
+
+
+def compile_family(config: dict, source_paths: list[Path], family: Family, prefix: str,
+                   family_name: str, env: dict, jobs: int, workspace: Path,
+                   guard_report: Path | None = None, static_sources: list[Path] | None = None) -> Path:
+    """Compile one family into workspace/fonts.
+
+    With `static_sources`, the variable fonts come from `source_paths` and the
+    static instances from `static_sources` (the same design with every named
+    weight rounded from its own outline).
+    """
+    if family.element_shapes:
+        # One master, so every static is the master itself with that style's
+        # glyph renames: no interpolated advances to align.
+        (source,) = source_paths
+        directory = serif.compile_fonts(source, family, prefix, family_name, env, workspace, guard_report)
+        require_exports(directory, family, prefix)
+    elif static_sources:
+        variable = _gftools(config, source_paths, env, jobs, workspace / "variable", buildStatic=False)
+        static = _gftools(config, static_sources, env, jobs, workspace / "static", buildVariable=False)
+        directory = workspace / "fonts"
+        shutil.copytree(variable / "variable", directory / "variable")
+        for kind in ("ttf", "otf"):
+            shutil.copytree(static / kind, directory / kind)
+        require_exports(directory, family, prefix)
+        normalize_static_advances(directory, family, prefix)
+    else:
+        directory = _gftools(config, source_paths, env, jobs, workspace)
+        require_exports(directory, family, prefix)
+        normalize_static_advances(directory, family, prefix)
     # gftools' default hint recipe permits failure; this direct API does not.
     for path in sorted((directory / "ttf").glob("*.ttf")):
         print(f"Autohinting {path.name}", flush=True)
@@ -246,14 +345,25 @@ def webfonts(directory: Path, family: Family):
                 font.flavor = "woff2"
                 font.save(web / path.with_suffix(".woff2").name)
     variable, static = f"{family.css}.css", f"{family.css}-static.css"
+    _, low, _, high = family.axis
+    if family.element_shapes:
+        # ELSH swaps glyphs rather than weights: one variable face picked with
+        # font-variation-settings, and one static family per shape, as Geist Serif ships.
+        variable_faces = [face(family.name, f"{family.variable_stem(family.key)}.woff2", "400", "normal")]
+        static_faces = [face(family.name if style.name == "Regular" else f"{family.name} {style.name}",
+                             f"{family.key}-{style.name}.woff2", "400", "normal") for style in family.styles]
+    else:
+        variable_faces = [face(family.name, f"{family.variable_stem(family.key, slope)}.woff2",
+                               f"{low} {high}", "normal" if slope == "upright" else "italic")
+                          for slope in family.slopes]
+        static_faces = [face(family.name, f"{family.key}-{style.name}.woff2", str(style.weight),
+                             "italic" if style.italic else "normal") for style in family.styles]
     (web / variable).write_text(
-        f"/* Variable family: load this OR {static}, not both. */\n" +
-        face(family.name, f"{family.key}[wght].woff2", "100 900", "normal") + "\n" +
-        face(family.name, f"{family.key}-Italic[wght].woff2", "100 900", "italic"), encoding="utf-8")
+        f"/* Variable family: load this OR {static}, not both. */\n" + "\n".join(variable_faces),
+        encoding="utf-8")
     (web / static).write_text(
-        f"/* Static family: load this OR {variable}, not both. */\n" +
-        "\n".join(face(family.name, f"{family.key}-{name}.woff2", str(weight), style)
-                  for weight, name, style in styles()), encoding="utf-8")
+        f"/* Static family: load this OR {variable}, not both. */\n" + "\n".join(static_faces),
+        encoding="utf-8")
 
 
 def publish(staged: Path, destination: Path, paths: list[Path]):
@@ -274,22 +384,28 @@ def baseline(family: Family, config: dict, state: dict, env: dict, jobs: int, fo
     build = build_dir(family)
     destination = build / "baseline"
     manifest = build / "baseline-manifest.json"
-    paths = expected_paths(family.upstream_key)
+    paths = expected_paths(family, family.upstream_key)
     if not force and cached(manifest, state, destination, paths):
         print(f"Unrounded {family.upstream_name} source baseline is current.")
         return
     staging = build / "baseline-sources"
     staging.mkdir(parents=True, exist_ok=True)
     sources = []
-    for basename in (family.upstream_key, family.upstream_key + "-Italic"):
+    for basename in family.upstream_packages:
         target = staging / f"{basename}.glyphs"
-        # Only serialization, plus the family's declared automatic-feature
-        # recreation, keeps compiler side effects out of the pinned upstream
-        # packages; no rounding or metadata rewriting is applied.
-        font = glyphsLib.load(str(sources_dir(family) / "upstream" / f"{basename}.glyphspackage"))
-        if family.automatic_ligatures:
-            add_automatic_ligatures(font)
-        font.save(str(target))
+        package = sources_dir(family) / "upstream" / f"{basename}.glyphspackage"
+        if family.element_shapes:
+            # Corner components must be placed before any compiler sees them.
+            run([sys.executable, "scripts/serif.py", "--family", family.key, "--baseline",
+                 "--source", str(package), "--output", str(target)], env)
+        else:
+            # Only serialization, plus the family's declared automatic-feature
+            # recreation, keeps compiler side effects out of the pinned upstream
+            # packages; no rounding or metadata rewriting is applied.
+            font = glyphsLib.load(str(package))
+            if family.automatic_ligatures:
+                add_automatic_ligatures(font)
+            font.save(str(target))
         sources.append(target)
     baseline_config = dict(config)
     baseline_config["familyName"] = family.upstream_name
@@ -297,7 +413,8 @@ def baseline(family: Family, config: dict, state: dict, env: dict, jobs: int, fo
     baseline_config["stat"] = {name.replace(family.key, family.upstream_key): axes
                                for name, axes in config["stat"].items()}
     with tempfile.TemporaryDirectory(prefix="baseline-", dir=build) as temporary:
-        staged = compile_family(baseline_config, sources, family.upstream_key, env, jobs, Path(temporary))
+        staged = compile_family(baseline_config, sources, family, family.upstream_key,
+                                family.upstream_name, env, jobs, Path(temporary))
         publish(staged, destination, paths)
     record(manifest, state, [destination / path for path in paths])
 
@@ -306,33 +423,50 @@ def rounded(family: Family, config: dict, state: dict, env: dict, jobs: int, for
     build = build_dir(family)
     destination = ROOT / "fonts" / family.key
     manifest = build / "build-manifest.json"
-    paths = expected_paths(family.key, family.css)
+    paths = expected_paths(family, family.key, family.css)
     staging = build / "sources"
-    sources = [staging / f"{family.key}.glyphs", staging / f"{family.key}-Italic.glyphs"]
-    reports = [build / "rounding-upright.json", build / "rounding-italic.json"]
-    extras = sources + reports
-    if not force and cached(manifest, state, destination, paths, extras):
+    sources = [staging / f"{basename.replace(family.upstream_key, family.key, 1)}.glyphs"
+               for basename in family.upstream_packages]
+    reports = [build / f"rounding-{slope}.json" for slope in family.slopes]
+    # Weight families get a second source per slope for their static instances,
+    # with every named weight rounded from its own outline (same file stem).
+    weighted = not family.element_shapes
+    static_sources = [staging / "statics" / source.name for source in sources] if weighted else []
+    static_reports = [build / f"rounding-{slope}-statics.json" for slope in family.slopes] if weighted else []
+    extras = sources + reports + static_sources + static_reports
+    # Written while compiling, after the sources: cached and recorded with them.
+    guard_report = build / "collision-guard.json" if family.soft_serif else None
+    outputs = extras + ([guard_report] if guard_report else [])
+    if not force and cached(manifest, state, destination, paths, outputs):
         print(f"{family.name} exports are current.")
         return
     staging.mkdir(parents=True, exist_ok=True)
-    for basename, target, report in zip((family.upstream_key, family.upstream_key + "-Italic"),
-                                        sources, reports):
-        run([sys.executable, "scripts/rounding.py", "--family", family.key, "--source",
+    script = "scripts/serif.py" if family.element_shapes else "scripts/rounding.py"
+    jobs_list = [(basename, target, report, []) for basename, target, report
+                 in zip(family.upstream_packages, sources, reports)]
+    jobs_list += [(basename, target, report, ["--intermediate-weights"]) for basename, target, report
+                  in zip(family.upstream_packages, static_sources, static_reports)]
+    for basename, target, report, flags in jobs_list:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        run([sys.executable, script, "--family", family.key, "--source",
              str(sources_dir(family) / "upstream" / f"{basename}.glyphspackage"), "--output", str(target),
-             "--report", str(report)], env)
+             "--report", str(report), *flags], env)
     for path in extras:
         if not path.is_file():
             raise RuntimeError(f"Missing source generation artifact: {path}")
-    for source in sources:
+    for source in sources + static_sources:
         font = glyphsLib.load(str(source))
         if font.familyName != family.name or (font.versionMajor, font.versionMinor) != FONT_VERSION:
             raise RuntimeError(f"Generated source must declare family {family.name} "
                                f"and version {FONT_VERSION_STRING}: {source}")
     with tempfile.TemporaryDirectory(prefix="rounded-", dir=build) as temporary:
-        staged = compile_family(config, sources, family.key, env, jobs, Path(temporary))
+        staged = compile_family(config, sources, family, family.key, family.name, env, jobs, Path(temporary),
+                                guard_report, static_sources)
         webfonts(staged, family)
+        (staged / "FONTLOG.txt").write_text(fontlog(family, reports, guard_report, static_reports),
+                                            encoding="utf-8")
         publish(staged, destination, paths)
-    record(manifest, state, [destination / path for path in paths] + extras)
+    record(manifest, state, [destination / path for path in paths] + outputs)
 
 
 def main():

@@ -6,7 +6,7 @@
   <img alt="Goeist Sans and Goeist Mono type specimens" src="./documentation/img/goeist-banner--light.png" width="1024">
 </picture>
 
-# Goeist Sans & Goeist Mono
+# Goeist Sans, Goeist Mono & Goeist Serif
 
 > **Experimental** <br>
 > Goeist is an early public preview and is not recommended for production use. Some glyphs, ligatures, and symbols have known issues. Letterforms and spacing may change between releases. Feedback and issue reports are welcome.
@@ -16,6 +16,8 @@ Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508)
 Goeist Sans keeps Geist's proportions, spacing and OpenType features, and softens every exposed corner and stroke ending. It is designed for interfaces, body copy and display sizes where Geist should feel a little warmer.
 
 Goeist Mono is the monospaced partner to Goeist Sans. Every corner is rounded as if drawn with one round tool, so stroke ends, slabs and dots become semicircles while widths stay fixed. It is designed to be used in code editors, terminals and other text-based interfaces, and keeps Geist Mono's coding ligatures.
+
+Goeist Serif is a soft take on [Geist Serif](https://vercel.com/blog/introducing-geist-serif), the high-contrast display serif. Its saw-toothed serif tips are thickened into half-rounds at their original reach, cut terminals on letters such as c, s, r and the figures end in circular arcs, and every other corner is rounded in proportion to its own stroke, so hairlines stay fine. Like Geist Serif it comes in one Regular weight, with the Element Shape (`ELSH`) axis choosing round, square, triangle or heart dots.
 
 ### Installation
 
@@ -30,13 +32,14 @@ npm i goeist
 ```js
 import { GoeistSans } from "goeist/font/sans";
 import { GoeistMono } from "goeist/font/mono";
+import { GoeistSerif } from "goeist/font/serif";
 ```
 
 See the [package README](packages/goeist/README.md) for the App Router, Pages Router and Tailwind CSS setup.
 
 ### Inspiration
 
-Goeist is drawn from Geist's outlines. [Open Runde](https://github.com/lauridskern/open-runde), [Intern](https://github.com/bvvst/intern) and [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans) showed how far rounding can go in a sans; Goeist Mono looks to [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded). Thanks to everyone behind them.
+Goeist is drawn from Geist's outlines. [Open Runde](https://github.com/lauridskern/open-runde), [Intern](https://github.com/bvvst/intern) and [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans) showed how far rounding can go in a sans; Goeist Mono looks to [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded); Goeist Serif looks to ITC Souvenir and the SOFT axis of [Fraunces](https://github.com/undercasetype/Fraunces). Thanks to everyone behind them. The research behind these choices is in [`research/`](research/README.md).
 
 ## Building
 
@@ -63,7 +66,7 @@ The original Geist copyright notices are kept in [`OFL.txt`](OFL.txt).
 
 ## Disclaimer
 
-Goeist is independent, not affiliated with or endorsed by [Vercel](https://vercel.com/geist/brands#usage) or [Dinamo](https://abcdinamo.com/licenses). ABC Diatype is a visual reference only; none of its font data is used.
+Goeist is independent, not affiliated with or endorsed by [Vercel](https://vercel.com/geist/brands#usage) or [Dinamo](https://abcdinamo.com/licenses). ABC Diatype and ITC Souvenir are visual references only; none of their font data is used.
 
 Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries.
 

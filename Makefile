@@ -2,7 +2,7 @@ VENV ?= venv
 PYTHON = $(VENV)/bin/python
 BOOTSTRAP_PYTHON ?= python3
 # Every family in scripts/families.py; override to build one, e.g. FAMILIES=GoeistMono.
-FAMILIES ?= Goeist GoeistMono
+FAMILIES ?= Goeist GoeistMono GoeistSerif
 
 .DEFAULT_GOAL := help
 .PHONY: help build baseline test proof qa venv package
@@ -36,12 +36,18 @@ proof: build
 	set -e; for family in $(FAMILIES); do "$(PYTHON)" scripts/proof.py --family $$family; done
 
 # Fontspector QA (Google Fonts profile). Every family gets a report; the target
-# still fails if any family fails.
+# still fails if any family fails. Goeist Serif keeps Geist Serif's Element Shape
+# design, which these Google Fonts checks reject in Geist Serif itself: named
+# instances per dot shape, ELSH value names outside the axis registry's "Default",
+# and no wght axis for the compulsory Regular STAT value.
+SERIF_QA_EXCLUDE = -x googlefonts/fvar_instances -x googlefonts/STAT/axisregistry \
+	-x googlefonts/STAT/compulsory_axis_values
 qa: build
 	command -v fontspector
 	status=0; for family in $(FAMILIES); do \
 		mkdir -p out/$$family/fontspector; \
-		fontspector --profile googlefonts -l warn --full-lists --succinct \
+		exclude=""; if [ "$$family" = GoeistSerif ]; then exclude="$(SERIF_QA_EXCLUDE)"; fi; \
+		fontspector --profile googlefonts -l warn --full-lists --succinct $$exclude \
 			--html out/$$family/fontspector/report.html --ghmarkdown out/$$family/fontspector/report.md \
 			fonts/$$family/variable/*.ttf || status=1; \
 	done; exit $$status

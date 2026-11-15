@@ -1,0 +1,32 @@
+Goeist Mono 1.000: FONTLOG
+
+Goeist Mono is a rounded derivative of Geist Mono. Every outline comes from the
+upstream source; advances, kerning, OpenType features, character map and vertical metrics
+are kept, and only corners, serif ends and stroke endings change.
+
+Base
+  Geist Mono, https://github.com/vercel/geist-font v1.9.2 (ef2597cfc42f4797676df105517ccc0a1cfa6569)
+  Source version 1.900. Licence: SIL Open Font License 1.1, no Reserved Font Name.
+  Original design: Basement.studio, Andrés Briganti, Mateo Zaragoza.
+  Variable axis: wght 100-900, default 400; upright and italic variable fonts. Static styles: Thin, ThinItalic, ExtraLight, ExtraLightItalic, Light, LightItalic, Regular, Italic, Medium, MediumItalic, SemiBold, SemiBoldItalic, Bold, BoldItalic, ExtraBold, ExtraBoldItalic, Black, BlackItalic.
+
+Modifications
+  Rounding profile 'round-nib': squared ends and outer corners 0.52 stem, acute corners 0.52 stem,
+  circular arcs, straight convex contours as stadiums up to 1.5 stem.
+  Concave joins, counters and hidden overlap corners keep their drawn construction.
+  U+2500-U+25FF keep their exact upstream outlines.
+  The liga feature Glyphs.app derives from `a_b.liga` glyph names is recreated.
+
+  Upright: measured stems Thin 32.0, Regular 86.0, UltraBlack 175.0 units.
+    6756 corners rounded over 2985 design layers, 4 with a locally reduced radius, 6 zero-length support curves for interpolation.
+    167 fillet joins on turning curves given one handle ratio in every master; 1092 kept circular handles, so the variable font can still bend at those joins between masters.
+
+  Italic: measured stems Thin Italic 30.6, Italic 85.9, Black Italic 174.9 units.
+    7587 corners rounded over 2952 design layers, 4 with a locally reduced radius, 15 zero-length support curves for interpolation.
+    592 fillet joins on turning curves given one handle ratio in every master; 1964 kept circular handles, so the variable font can still bend at those joins between masters.
+  Upright static instances: every named weight rounded from its own interpolated outline (7002 intermediate layers), not interpolated between rounded masters.
+  Italic static instances: every named weight rounded from its own interpolated outline (6936 intermediate layers), not interpolated between rounded masters.
+
+Acknowledgements
+  Geist Mono by Basement.studio, Andrés Briganti, Mateo Zaragoza, published by Vercel under the SIL Open Font License 1.1.
+  Goeist Mono is independent and not affiliated with or endorsed by Vercel, Inc.

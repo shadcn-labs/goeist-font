@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from glyphsLib import GSFont, load
+from glyphsLib.types import Point
 from glyphsLib.classes import (
     CURVE, LINE, OFFCURVE, GSAnchor, GSComponent, GSFeature, GSFontMaster,
     GSGlyph, GSInstance, GSLayer, GSNode, GSPath,
@@ -17,9 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from families import FAMILIES, FONT_VERSION  # noqa: E402
 from rounding import (  # noqa: E402
-    Contour, GeometryError, OutlineContext, add_automatic_ligatures, classify_corner, cross, dot,
-    evaluate, filled,
-    point, prepare_corners, proper_intersection, round_font,
+    Contour, GeometryError, OutlineContext, add_automatic_ligatures, add_intermediate_layers, classify_corner,
+    cross, dot, equalize_join_ratios, evaluate, filled,
+    point, prepare_corners, proper_intersection, round_font, sub,
     tangent, write_contour,
 )
 
@@ -75,7 +76,7 @@ def source_font():
             layer.layerId = master.id
             layer.associatedMasterId = master.id
             layer.width = 600
-            layer.anchors.append(GSAnchor("top", (300, 710)))
+            layer.anchors.append(GSAnchor("top", Point(300, 710)))
             if name == "H":
                 layer.paths.append(rectangle(width, 710))
             elif name == "O":
@@ -337,6 +338,62 @@ class RoundedGeometryTests(unittest.TestCase):
                           "sub hyphen greater by hyphen_greater.liga;"])
         with self.assertRaisesRegex(GeometryError, "already defines liga"):
             add_automatic_ligatures(font)
+
+    def test_named_weights_become_exact_intermediate_masters(self):
+        font = source_font()
+        # An existing sparse layer must be interpolated through, not across.
+        h = font.glyphs["H"]
+        brace = copy.deepcopy(h.layers["Black"])
+        brace.layerId, brace.associatedMasterId = "brace801", "Black"
+        brace.attributes["coordinates"] = [801]
+        brace.paths[0].nodes = rectangle(150, 710).nodes
+        h.layers.append(brace)
+        self.assertEqual(add_intermediate_layers(font), 4 * 6)
+        layers = {layer._brace_coordinates()[0]: layer for layer in h.layers if layer._is_brace_layer()}
+        self.assertEqual(sorted(layers), [200, 300, 500, 600, 700, 800, 801])
+        width = lambda layer: max(point(n)[0] for n in layer.paths[0].nodes)
+        self.assertAlmostEqual(width(layers[300]), 32 + (84 - 32) * 2 / 3)
+        self.assertAlmostEqual(width(layers[800]), 84 + (150 - 84) * 400 / 401)
+        # One id per weight, so a composite's component finds its base's layer.
+        self.assertTrue(all(any(l.layerId == "goeist-intermediate-700" for l in glyph.layers)
+                            for glyph in font.glyphs))
+        rounded, report = round_font(source_font(), intermediate_weights=True)
+        self.assertEqual(report["counts"]["intermediate_layers"], 4 * 6)
+        rounded_700 = next(l for l in rounded.glyphs["H"].layers if l.layerId == "goeist-intermediate-700")
+        self.assertTrue(any(n.type == CURVE for n in rounded_700.paths[0].nodes))
+
+    def test_open_corner_loop_is_not_ink_and_keeps_its_construction(self):
+        # A Glyphs open corner: the top-right edges overshoot and cross, leaving
+        # a loop glyphsLib erases at export. Its corners are not exposed ink, so
+        # they stay straight and the export still recognises and erases them.
+        path = polygon([(0, 0), (100, 0), (100, 120), (120, 100), (0, 100)])
+        _, reasons, _ = round_path(path)
+        self.assertEqual(reasons["hidden_or_overlapping_construction_corner"], 2)
+        positions = {point(n) for n in path.nodes}
+        self.assertIn((100, 120), positions)
+        self.assertIn((120, 100), positions)
+
+    def test_join_ratios_match_across_masters_where_tangents_turn(self):
+        def layer(direction, arm, side):
+            path = GSPath()
+            path.closed = True
+            p = (100, 100)
+            o = (p[0] - direction[0] * side, p[1] - direction[1] * side)
+            h = (p[0] + direction[0] * arm, p[1] + direction[1] * arm)
+            path.nodes = [GSNode(o, type=OFFCURVE), GSNode(p, type=CURVE, smooth=True),
+                          GSNode(h, type=OFFCURVE), GSNode((200, 200), type=OFFCURVE),
+                          GSNode((300, 100), type=CURVE)]
+            return path
+        diagonal = (math.sqrt(0.5), math.sqrt(0.5))
+        paths = [layer((1, 0), 10, 40), layer(diagonal, 24, 60)]
+        self.assertEqual(equalize_join_ratios(paths, [(1, 2, 0)]), (1, 0))
+        ratios = [math.dist(point(p.nodes[2]), point(p.nodes[1])) / math.dist(point(p.nodes[0]), point(p.nodes[1]))
+                  for p in paths]
+        self.assertAlmostEqual(ratios[0], ratios[1])
+        self.assertAlmostEqual(cross(sub(point(paths[1].nodes[2]), point(paths[1].nodes[1])), diagonal), 0)
+        # Parallel tangents interpolate without a kink whatever the ratio.
+        same = [layer((1, 0), 10, 40), layer((1, 0), 24, 60)]
+        self.assertEqual(equalize_join_ratios(same, [(1, 2, 0)]), (0, 0))
 
     def test_unsupported_outline_fails_explicitly(self):
         path = rectangle()
