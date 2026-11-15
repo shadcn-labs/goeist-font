@@ -14,7 +14,7 @@ Goeist Sans keeps Geist's proportions, spacing and OpenType features, and soften
 
 Goeist Mono is the monospaced partner to Goeist Sans. Every corner is rounded as if drawn with one round tool, so stroke ends, slabs and dots become semicircles while widths stay fixed. It is designed to be used in code editors, terminals and other text-based interfaces, and keeps Geist Mono's coding ligatures.
 
-Goeist Serif is the editorial partner to Goeist Sans, a soft take on [Geist Serif](https://vercel.com/blog/introducing-geist-serif). Its saw-toothed serifs end in half-rounds and its cut terminals in circular arcs, while hairlines and contrast stay fine. It is designed for headlines, posters and other display sizes, and keeps Geist Serif's Element Shape axis for round, square, triangle or heart dots.
+Goeist Serif is the editorial partner to Goeist Sans, a soft take on Geist Serif. Its saw-toothed serifs end in half-rounds and its cut terminals in circular arcs, while hairlines and contrast stay fine. It is designed for headlines, posters and other display sizes, and keeps Geist Serif's Element Shape axis for round, square, triangle or heart dots.
 
 ### Installation
 
@@ -36,7 +36,7 @@ See the [package README](packages/goeist/README.md) for the App Router, Pages Ro
 
 ### Inspiration
 
-Goeist is drawn from Geist's outlines. [Open Runde](https://github.com/lauridskern/open-runde), [Intern](https://github.com/bvvst/intern) and [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans) showed how far rounding can go in a sans; Goeist Mono looks to [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded); Goeist Serif looks to ITC Souvenir and the SOFT axis of [Fraunces](https://github.com/undercasetype/Fraunces). Thanks to everyone behind them. The research behind these choices is in [`research/`](research/README.md).
+Goeist is drawn from Geist's outlines. [Open Runde](https://github.com/lauridskern/open-runde), [Intern](https://github.com/bvvst/intern) and [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans) showed how far rounding can go in a sans; Goeist Mono looks to [ABC Diatype Rounded Mono](https://abcdinamo.com/typefaces/diatype-rounded); Goeist Serif looks to ITC Souvenir and the SOFT axis of [Fraunces](https://github.com/undercasetype/Fraunces). Thanks to everyone behind them.
 
 ## Building
 

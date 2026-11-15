@@ -28,3 +28,6 @@ node_modules/
 
 # Glyphs.app autosaves
 *(Autosaved).*
+
+# Local design research notes (not published)
+/research/
