@@ -3,7 +3,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./documentation/img/goeist-banner--dark.png">
   <source media="(prefers-color-scheme: light)" srcset="./documentation/img/goeist-banner--light.png">
-  <img alt="Goeist Sans and Goeist Mono type specimens" src="./documentation/img/goeist-banner--light.png" width="1024">
+  <img alt="Goeist Sans, Goeist Mono and Goeist Serif type specimens" src="./documentation/img/goeist-banner--light.png" width="1024">
 </picture>
 
 # Goeist Sans, Goeist Mono & Goeist Serif
