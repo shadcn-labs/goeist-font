@@ -8,7 +8,11 @@
 
 Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist Sans, Geist Mono and Geist Serif](https://github.com/vercel/geist-font).
 
-Goeist Sans keeps Geist's proportions and spacing, with softened corners and stroke endings. Goeist Mono is its monospaced partner, rounded as if drawn with one round tool, for code editors, terminals and other text-based interfaces. Goeist Serif is a soft display serif: Geist Serif's saw-toothed serifs end in half-rounds and its hairlines stay fine.
+Goeist Sans keeps Geist's proportions and spacing, with softened corners and stroke endings. It is designed for body copy, headlines and interfaces.
+
+Goeist Mono is its monospaced partner, rounded as if drawn with one round tool, for code editors, terminals and other text-based interfaces.
+
+Goeist Serif is a soft display serif: Geist Serif's saw-toothed serifs end in half-rounds and its hairlines stay fine. It includes Regular, Square, Triangle and Heart dot shapes.
 
 ### Installation
 
@@ -18,23 +22,38 @@ npm install goeist
 
 ### Using with Next.js
 
-`GoeistSans` is exported from `goeist/font/sans`, `GoeistMono` from `goeist/font/mono` and `GoeistSerif` from `goeist/font/serif`. All are `NextFontWithVariable` instances that load variable fonts through `next/font/local`, so there is nothing else to import. You can learn more by [reading the `next/font` docs](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
+`GoeistSans` is exported from `goeist/font/sans` and `GoeistMono` from `goeist/font/mono`. Goeist Serif ships a variable entry point (`goeist/font/serif`) and one entry point per variant (e.g. `goeist/font/serif/square`), so you only emit and preload the files you import. All are `NextFontWithVariable` instances. You can learn more by [reading the `next/font` docs](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
+
+#### Goeist Serif Variants
+
+Use `GoeistSerif` to load one variable font and select its shape through `ELSH`:
+
+```jsx
+import { GoeistSerif } from "goeist/font/serif";
+```
+
+| Shape | `ELSH` value |
+| --- | --- |
+| Regular | `0` |
+| Square | `25` |
+| Triangle | `50` |
+| Heart | `100` |
+
+Goeist Serif includes four distinct variants: Regular with round dots (the default), Square, Triangle and Heart. All have one Regular weight (400). Use their individual entry points to emit and preload only the fonts you import:
 
 | Export | Entry point | CSS Variable |
 | --- | --- | --- |
-| `GoeistSans` | `goeist/font/sans` | `--font-goeist-sans` |
-| `GoeistMono` | `goeist/font/mono` | `--font-goeist-mono` |
-| `GoeistSerif` | `goeist/font/serif` | `--font-goeist-serif` |
-| `GoeistSansNonVariable` | `goeist/font/sans-non-variable` | `--font-goeist-sans-non-variable` |
-| `GoeistMonoNonVariable` | `goeist/font/mono-non-variable` | `--font-goeist-mono-non-variable` |
 | `GoeistSerifRegular` | `goeist/font/serif/regular` | `--font-goeist-serif-regular` |
 | `GoeistSerifSquare` | `goeist/font/serif/square` | `--font-goeist-serif-square` |
 | `GoeistSerifTriangle` | `goeist/font/serif/triangle` | `--font-goeist-serif-triangle` |
 | `GoeistSerifHeart` | `goeist/font/serif/heart` | `--font-goeist-serif-heart` |
 
-The Sans and Mono non-variable exports load 18 static files and are only needed for browsers without variable-font support.
-
-Goeist Serif has one Regular weight. Its variable font carries every dot shape on the Element Shape axis: set `font-variation-settings: "ELSH" 25` for square dots, `50` for triangles or `100` for hearts (`0`, round, is the default). Each shape also ships as its own static file, so you only download the one you use.
+```jsx
+import { GoeistSerifRegular } from "goeist/font/serif/regular";
+import { GoeistSerifSquare } from "goeist/font/serif/square";
+import { GoeistSerifTriangle } from "goeist/font/serif/triangle";
+import { GoeistSerifHeart } from "goeist/font/serif/heart";
+```
 
 #### App Router
 
@@ -80,19 +99,36 @@ const nextConfig = {
 export default nextConfig;
 ```
 
+This is required to fix errors like:
+
+- `TypeError: next_font_local__WEBPACK_IMPORTED_MODULE_0___default(...) is not a function`
+- `SyntaxError: Cannot use import statement outside a module`
+
 #### With Tailwind CSS
 
-Both fonts can be used through CSS variables.
+All Goeist fonts can be used through CSS variables.
+
+- `GoeistSans`: `--font-goeist-sans`
+- `GoeistMono`: `--font-goeist-mono`
+- `GoeistSerif`: `--font-goeist-serif`
+- `GoeistSerifRegular`: `--font-goeist-serif-regular`
+- `GoeistSerifSquare`: `--font-goeist-serif-square`
+- `GoeistSerifTriangle`: `--font-goeist-serif-triangle`
+- `GoeistSerifHeart`: `--font-goeist-serif-heart`
 
 In `app/layout.js`:
 
 ```jsx
 import { GoeistSans } from "goeist/font/sans";
 import { GoeistMono } from "goeist/font/mono";
+import { GoeistSerif } from "goeist/font/serif";
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${GoeistSans.variable} ${GoeistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${GoeistSans.variable} ${GoeistMono.variable} ${GoeistSerif.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
@@ -104,10 +140,12 @@ export default function RootLayout({ children }) {
 Then in `tailwind.css`:
 
 ```css
-@theme {
-  /* rest of your theme config */
+@import "tailwindcss";
+
+@theme inline {
   --font-sans: var(--font-goeist-sans);
   --font-mono: var(--font-goeist-mono);
+  --font-serif: var(--font-goeist-serif);
 }
 ```
 
@@ -115,48 +153,26 @@ Then in `tailwind.css`:
 
 Then in `tailwind.config.js`:
 
-```js
+```javascript
 module.exports = {
   theme: {
     extend: {
       fontFamily: {
         sans: ["var(--font-goeist-sans)"],
         mono: ["var(--font-goeist-mono)"],
+        serif: ["var(--font-goeist-serif)"],
       },
     },
   },
 };
 ```
 
-### Other frameworks
-
-Outside Next.js, import the stylesheet once and use the font family by name:
-
-```js
-import "goeist/sans.css"; // or "goeist/sans-static.css"
-import "goeist/mono.css"; // or "goeist/mono-static.css"
-import "goeist/serif.css"; // or "goeist/serif-static.css"
-```
-
-```css
-body {
-  font-family: "Goeist", sans-serif;
-}
-
-h1 {
-  font-family: "Goeist Serif", serif;
-  font-variation-settings: "ELSH" 25; /* square dots; omit for round */
-}
-```
-
-With `serif-static.css`, each shape is its own family: `"Goeist Serif"`, `"Goeist Serif Square"`, `"Goeist Serif Triangle"` and `"Goeist Serif Heart"`.
-
 ### License
 
-Copyright 2026 Aniket Pawar. This Font Software is licensed under the SIL Open Font License, Version 1.1. The original Geist copyright notices are included in `LICENSE.txt`.
+The Goeist font family is free and open sourced under the [SIL Open Font License](./LICENSE.txt).
 
-### Disclaimer
+### Inspiration
 
-Goeist is independent, not affiliated with or endorsed by [Vercel](https://vercel.com/geist/brands#usage) or [Dinamo](https://abcdinamo.com/licenses). ABC Diatype is a visual reference only; none of its font data is used.
+Goeist is a rounded take on [Geist](https://github.com/vercel/geist-font), created by Vercel and its collaborators. [ABC Diatype](https://abcdinamo.com/typefaces/diatype) is a visual reference only; none of its font data is used. We thank the creators of these typefaces for their craft.
 
-Vercel, the Vercel design, Next.js and related marks, designs and logos are trademarks or registered trademarks of Vercel, Inc. or its affiliates in the US and other countries.
+Goeist is independent, not affiliated with or endorsed by Vercel or Dinamo.
