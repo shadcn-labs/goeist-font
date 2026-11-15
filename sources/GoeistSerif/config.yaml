@@ -1,0 +1,20 @@
+# Goeist Serif is compiled by scripts/serif.py with fontmake, as upstream's
+# build-geist-serif.py compiles Geist Serif: Glyphs corner components must be
+# placed first, and the ELSH axis only swaps glyphs. scripts/build.py checks
+# `familyName` and `version` here; `stat` documents the variable font's STAT.
+familyName: Goeist Serif
+version: '1.000'
+stat:
+  GoeistSerif[ELSH].ttf:
+    - name: Element Shape
+      tag: ELSH
+      values:
+        - name: Regular
+          value: 0
+          flags: 2
+        - name: Square
+          value: 25
+        - name: Triangle
+          value: 50
+        - name: Heart
+          value: 100

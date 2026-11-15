@@ -32,10 +32,10 @@ from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
 from families import FAMILIES, FONT_VERSION_STRING
+import collisions
 from rounding import MANUFACTURER, VENDOR_ID
 
 SCHEMA = 1
-WEIGHTS = tuple(range(100, 901, 100))
 INTERMEDIATES = (250, 550, 850)
 SETS = {f"ss{i:02}" for i in range(1, 12)}
 SAMPLES = {
@@ -107,9 +107,31 @@ def identity(font):
             "weight": int(font["OS/2"].usWeightClass), "variable": variable}
 
 
-def font_key(font):
+def style_label(family, style):
+    """Weight families tell statics apart by weight, Element Shape families by name."""
+    return style.name if family.element_shapes else str(style.weight)
+
+
+def style_key(family, style):
+    return f"{style.slope}:{style_label(family, style)}"
+
+
+def instance_locations(family):
+    """(label, variable-font location) for every instance the audit samples."""
+    if family.element_shapes:
+        return [(style.name, dict(style.location)) for style in family.styles]
+    tag = family.axis[0]
+    weights = sorted({style.weight for style in family.styles} | set(INTERMEDIATES))
+    return [(str(weight), {tag: weight}) for weight in weights]
+
+
+def font_key(font, family):
     info = identity(font)
-    return f"{info['style']}:{'variable' if info['variable'] else info['weight']}"
+    if info["variable"]:
+        return f"{info['style']}:variable"
+    if family.element_shapes:
+        return f"{info['style']}:{(name_values(font, 17) or name_values(font, 2))[0]}"
+    return f"{info['style']}:{info['weight']}"
 
 
 def raw_font(font):
@@ -306,28 +328,67 @@ def snapshot(font, path, include_shaping=True):
     return result
 
 
-def load_collection(directory, *, instances=False):
-    """Prefer TTF over duplicate OTF instances; retain each style/weight once."""
+def load_collection(directory, family, *, instances=False, guard=None):
+    """Prefer TTF over duplicate OTF instances; retain each style once.
+
+    `guard` maps file stems to the collision-guard pairs the build recorded
+    (build/<Family>/collision-guard.json). Those fonts have the guard lookup
+    removed first and its pair count kept as `guard_pairs`, so the rest of GPOS
+    and shaping can be compared with the unrounded baseline; the guard itself
+    is audited by the collision check.
+    """
     paths = sorted(Path(directory).rglob("*.ttf")) + sorted(Path(directory).rglob("*.otf"))
     collection = {}
     duplicates = []
     for path in paths:
         with TTFont(path, recalcTimestamp=False) as font:
-            key = font_key(font)
+            key = font_key(font, family)
             if key in collection:
                 duplicates.append(str(path))
                 continue
             print(f"  Reading {path}", flush=True)
+            stripped = strip_recorded_guard(font, path, guard)
             collection[key] = snapshot(font, path)
+            collection[key]["guard_pairs"] = stripped
             if instances and "fvar" in font:
-                for weight in WEIGHTS + INTERMEDIATES:
-                    instance = instantiateVariableFont(font, {"wght": weight}, inplace=False)
+                for label, location in instance_locations(family):
+                    instance = instantiateVariableFont(font, location, inplace=False)
                     try:
-                        collection[f"{identity(font)['style']}:instance:{weight}"] = snapshot(
-                            instance, f"{path}@wght={weight}")
+                        collection[f"{identity(font)['style']}:instance:{label}"] = snapshot(
+                            instance, f"{path}@" + ",".join(f"{tag}={value}" for tag, value in location.items()))
                     finally:
                         instance.close()
     return {"schema": SCHEMA, "fonts": collection, "duplicate_formats": duplicates}
+
+
+def strip_recorded_guard(font, path, guard):
+    """Remove the collision guard the build recorded for this file; returns its pair count."""
+    expected = len((guard or {}).get(Path(path).stem, []))
+    stripped = collisions.strip_guard_lookup(font) if expected else 0
+    if stripped != expected:
+        raise ValueError(f"{Path(path).name}: collision guard has {stripped} pairs, build recorded {expected}")
+    return stripped
+
+
+def audit_collisions(audit, root, baseline_root):
+    """No shaped pair of encoded characters may sit closer than its baseline gap
+    or the make-font minimum (6 units for text faces, the soft serif's display
+    minimum for Goeist Serif), whichever is smaller."""
+    family = audit.family
+    min_gap = family.soft_serif.guard if family.soft_serif else 6
+    for style in family.styles:
+        built = Path(root) / "ttf" / f"{family.key}-{style.name}.ttf"
+        before = Path(baseline_root) / "ttf" / f"{family.upstream_key}-{style.name}.ttf"
+        if not built.is_file() or not before.is_file():
+            audit.check(f"collisions:{style_key(family, style)}", False, "Missing built or baseline TTF")
+            continue
+        print(f"  Collisions {built.name}", flush=True)
+        found = collisions.regressions(collisions.pair_gaps(built, min_gap),
+                                       collisions.pair_gaps(before, min_gap), min_gap)
+        audit.check(f"collisions:{style_key(family, style)}", not found,
+                    {"min_gap": min_gap, "tolerance": collisions.TOLERANCE, "regressions": len(found),
+                     "worst": [{"pair": "".join(pair), "gap": round(gap, 1), "baseline": round(base, 1)}
+                               for _, pair, gap, base in found[:20]]})
 
 
 def comparable(data):
@@ -380,7 +441,8 @@ def compare_font(audit, key, baseline, built, *, rounded=True):
     lost_shapes = [name for name, outline in baseline["outlines"].items()
                    if outline["operations"] and not built["outlines"].get(name, {}).get("operations")]
     audit.check(f"{prefix}:all-encoded-and-unencoded-shapes", not lost_shapes, lost_shapes)
-    if rounded and key.split(":")[-1] in {"400", "700"}:
+    probes = {"Regular"} if audit.family.element_shapes else {"400", "700"}
+    if rounded and key.split(":")[-1] in probes:
         changes = {}
         for char in "HAntr":
             name = baseline["cmap"].get(str(ord(char)))
@@ -396,18 +458,21 @@ def compare_font(audit, key, baseline, built, *, rounded=True):
 
 
 def audit_drift(audit, source, release):
-    for style in ("upright", "italic"):
-        vf = release["fonts"].get(f"{style}:variable")
+    family = audit.family
+    for slope in family.slopes:
+        vf = release["fonts"].get(f"{slope}:variable")
         if not vf:
-            audit.check(f"reference:{style}:variable", False, "Missing official reference variable font")
+            audit.check(f"reference:{slope}:variable", False, "Missing official reference variable font")
             continue
-        for weight in WEIGHTS:
-            old = release["fonts"].get(f"{style}:instance:{weight}")
-            new = source["fonts"].get(f"{style}:{weight}") or source["fonts"].get(f"{style}:instance:{weight}")
+        for label in (style_label(family, s) for s in family.styles if s.slope == slope):
+            # Like for like: a release static against the source static where the
+            # release ships statics (Geist Serif), else the release VF instance.
+            old = release["fonts"].get(f"{slope}:{label}") or release["fonts"].get(f"{slope}:instance:{label}")
+            new = source["fonts"].get(f"{slope}:{label}") or source["fonts"].get(f"{slope}:instance:{label}")
             if not old or not new:
-                audit.check(f"baseline:{style}:{weight}", False, "Missing source/release weight")
+                audit.check(f"baseline:{slope}:{label}", False, "Missing source/release style")
                 continue
-            prefix = f"{style}:{weight}"
+            prefix = f"{slope}:{label}"
             known_omega_correction = (
                 old["cmap"].get(str(0x03C9)) == old["cmap"].get(str(0x03A9)) and
                 str(0x03C9) not in new["cmap"] and
@@ -479,30 +544,36 @@ def audit_naming(audit, key, data):
                 bool(bits["macStyle"] & 2) == italic and (bits["italicAngle"] != 0) == italic, bits)
     audit.check(f"naming:{key}:vendor", data["vendor"] == VENDOR_ID, data["vendor"])
     if suffix != "variable":
-        weight = int(suffix)
-        bold = weight == 700
+        style = next(s for s in audit.family.styles if style_key(audit.family, s) == key)
+        bold = style.weight == 700
         audit.check(f"naming:{key}:bold-link", bool(bits["fsSelection"] & 32) == bold and
                     bool(bits["macStyle"] & 1) == bold, bits)
+        if audit.family.element_shapes:
+            # Each shape is its own legacy family, as in Geist Serif: "Goeist Serif Square".
+            legacy = audit.family.name + ("" if style.name == "Regular" else f" {style.name}")
+            audit.check(f"naming:{key}:legacy-family", names["1"] == [legacy], names["1"])
         # Legacy RIBBI families group only Regular/Bold/Italic/Bold Italic.
-        if weight in (400, 700):
+        elif style.weight in (400, 700):
             audit.check(f"naming:{key}:legacy-family", names["1"] == [audit.family.name], names["1"])
 
 
-def audit_delivery(audit, root, baseline):
+def audit_delivery(audit, root, baseline, guard=None):
     root = Path(root)
+    family = audit.family
     for ext, directory in (("ttf", "ttf"), ("otf", "otf")):
         files = sorted((root / directory).glob(f"*.{ext}"))
-        audit.check(f"delivery:{ext}:count", len(files) == 18, [str(p) for p in files])
+        audit.check(f"delivery:{ext}:count", len(files) == len(family.styles), [str(p) for p in files])
         keys = []
         for path in files:
             try:
                 with TTFont(path, recalcTimestamp=False) as font:
-                    keys.append(font_key(font))
+                    keys.append(font_key(font, family))
                     audit.check(f"delivery:{path.name}:static", "fvar" not in font)
                     if ext == "otf":
                         audit.check(f"delivery:{path.name}:cff", "CFF " in font)
+                        strip_recorded_guard(font, path, guard)
                         data = snapshot(font, path)
-                        key = font_key(font)
+                        key = font_key(font, family)
                         audit_naming(audit, key, data)
                         if key in baseline["fonts"]:
                             compare_font(audit, "otf:" + key, baseline["fonts"][key], data)
@@ -510,10 +581,10 @@ def audit_delivery(audit, root, baseline):
                             audit.check(f"source:otf:{key}:baseline", False, "Missing source baseline")
             except Exception as exc:
                 audit.check(f"delivery:{path.name}:load", False, str(exc))
-        expected = {f"{style}:{w}" for style in ("upright", "italic") for w in WEIGHTS}
+        expected = {style_key(family, style) for style in family.styles}
         audit.check(f"delivery:{ext}:styles", set(keys) == expected and len(keys) == len(set(keys)), keys)
     variables = sorted((root / "variable").glob("*.ttf"))
-    audit.check("delivery:variables:count", len(variables) == 2, [str(p) for p in variables])
+    audit.check("delivery:variables:count", len(variables) == len(family.slopes), [str(p) for p in variables])
     ttfs = sorted((root / "ttf").glob("*.ttf")) + variables
     expected_web = set()
     for path in ttfs:
@@ -539,7 +610,8 @@ def audit_delivery(audit, root, baseline):
         except Exception as exc:
             audit.check(f"web:{path.stem}:load", False, str(exc))
     actual_web = {p.name for p in (root / "webfonts").glob("*.woff2")}
-    audit.check("delivery:webfonts:count-and-names", expected_web == actual_web and len(actual_web) == 20,
+    audit.check("delivery:webfonts:count-and-names", expected_web == actual_web and
+                len(actual_web) == len(family.styles) + len(family.slopes),
                 {"expected": sorted(expected_web), "actual": sorted(actual_web)})
 
 
@@ -565,9 +637,11 @@ def main():
                   if args.drift_allowlist else ())
     report = {"schema": SCHEMA, "checks": audit.checks, "source_release_drift": audit.drift}
     try:
-        built = load_collection(args.fonts, instances=True)
-        baseline = load_collection(args.source_baseline, instances=True)
-        release = load_collection(args.reference, instances=True)
+        guard_report = Path("build") / family.key / "collision-guard.json"
+        guard = json.loads(guard_report.read_text())["fonts"] if family.soft_serif else None
+        built = load_collection(args.fonts, family, instances=True, guard=guard)
+        baseline = load_collection(args.source_baseline, family, instances=True)
+        release = load_collection(args.reference, family, instances=True)
         report["source_baseline_fingerprint"] = digest(comparable(baseline))
         report["reference_fingerprint"] = digest(comparable(release))
         report["versions"] = {
@@ -576,8 +650,8 @@ def main():
             "rounded": sorted({f["version"] for f in built["fonts"].values()}),
         }
         audit_drift(audit, baseline, release)
-        expected = {f"{style}:{w}" for style in ("upright", "italic") for w in WEIGHTS}
-        expected |= {f"{style}:variable" for style in ("upright", "italic")}
+        expected = {style_key(family, style) for style in family.styles}
+        expected |= {f"{slope}:variable" for slope in family.slopes}
         audit.check("inventory:built", expected.issubset(built["fonts"]),
                     sorted(expected - set(built["fonts"])))
         audit.check("inventory:source-baseline", expected.issubset(baseline["fonts"]),
@@ -586,19 +660,23 @@ def main():
             if ":instance:" not in key:
                 audit_naming(audit, key, data)
             if key.endswith(":variable"):
-                audit.check(f"axes:{key}", data["axes"] == {"wght": [100, 400, 900]}, data["axes"])
+                tag, low, default, high = family.axis
+                audit.check(f"axes:{key}", data["axes"] == {tag: [low, default, high]}, data["axes"])
             if key in baseline["fonts"]:
                 compare_font(audit, key, baseline["fonts"][key], data)
             else:
                 audit.check(f"source:{key}:baseline", False, "Missing source baseline for this font/instance")
-        for style in ("upright", "italic"):
-            for weight in WEIGHTS:
-                static = built["fonts"].get(f"{style}:{weight}")
-                instance = built["fonts"].get(f"{style}:instance:{weight}")
-                audit.check(f"instance:{style}:{weight}:available", bool(static and instance))
-                if static and instance:
-                    audit.check(f"instance:{style}:{weight}:advances", static["advances"] == instance["advances"])
-        audit_delivery(audit, args.fonts, baseline)
+        for style in family.styles:
+            key, label = style_key(family, style), style_label(family, style)
+            static = built["fonts"].get(key)
+            instance = built["fonts"].get(f"{style.slope}:instance:{label}")
+            audit.check(f"instance:{key}:available", bool(static and instance))
+            # A shape static renames its dot glyphs (period holds the square dot),
+            # so only the default shape shares glyph names with its instance.
+            if static and instance and (not family.element_shapes or style.name == "Regular"):
+                audit.check(f"instance:{key}:advances", static["advances"] == instance["advances"])
+        audit_delivery(audit, args.fonts, baseline, guard)
+        audit_collisions(audit, args.fonts, args.source_baseline)
         report["inventory"] = {key: {"path": value["path"], "glyph_count": len(value["glyphs"]),
                                       "cmap_count": len(value["cmap"]), "axes": value["axes"],
                                       "feature_effects": value["shaping"]["feature_effects"]}

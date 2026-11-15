@@ -1,7 +1,7 @@
 {
   "name": "goeist",
   "version": "0.0.2",
-  "description": "Goeist is Shadcn Labs' font family, including Goeist Sans and Goeist Mono.",
+  "description": "Goeist is Shadcn Labs' font family, including Goeist Sans, Goeist Mono and Goeist Serif.",
   "type": "module",
   "license": "OFL-1.1",
   "author": "Aniket Pawar <pawaraniket508@gmail.com>",
@@ -19,6 +19,7 @@
     "font",
     "typeface",
     "monospace",
+    "serif",
     "rounded",
     "geist",
     "next/font",
@@ -42,10 +43,32 @@
       "types": "./font/mono-non-variable.d.ts",
       "default": "./font/mono-non-variable.js"
     },
+    "./font/serif": {
+      "types": "./font/serif.d.ts",
+      "default": "./font/serif.js"
+    },
+    "./font/serif/regular": {
+      "types": "./font/serif/regular.d.ts",
+      "default": "./font/serif/regular.js"
+    },
+    "./font/serif/square": {
+      "types": "./font/serif/square.d.ts",
+      "default": "./font/serif/square.js"
+    },
+    "./font/serif/triangle": {
+      "types": "./font/serif/triangle.d.ts",
+      "default": "./font/serif/triangle.js"
+    },
+    "./font/serif/heart": {
+      "types": "./font/serif/heart.d.ts",
+      "default": "./font/serif/heart.js"
+    },
     "./sans.css": "./assets/goeist-sans/goeist-sans.css",
     "./sans-static.css": "./assets/goeist-sans/goeist-sans-static.css",
     "./mono.css": "./assets/goeist-mono/goeist-mono.css",
     "./mono-static.css": "./assets/goeist-mono/goeist-mono-static.css",
+    "./serif.css": "./assets/goeist-serif/goeist-serif.css",
+    "./serif-static.css": "./assets/goeist-serif/goeist-serif-static.css",
     "./package.json": "./package.json"
   },
   "files": [

@@ -1,0 +1,30 @@
+Goeist 1.000: FONTLOG
+
+Goeist is a rounded derivative of Geist Sans. Every outline comes from the
+upstream source; advances, kerning, OpenType features, character map and vertical metrics
+are kept, and only corners, serif ends and stroke endings change.
+
+Base
+  Geist, https://github.com/vercel/geist-font v1.9.2 (ef2597cfc42f4797676df105517ccc0a1cfa6569)
+  Source version 1.900. Licence: SIL Open Font License 1.1, no Reserved Font Name.
+  Original design: Basement.studio, Andrés Briganti, Mateo Zaragoza.
+  Variable axis: wght 100-900, default 400; upright and italic variable fonts. Static styles: Thin, ThinItalic, ExtraLight, ExtraLightItalic, Light, LightItalic, Regular, Italic, Medium, MediumItalic, SemiBold, SemiBoldItalic, Bold, BoldItalic, ExtraBold, ExtraBoldItalic, Black, BlackItalic.
+
+Modifications
+  Rounding profile 'soft': squared ends and outer corners 0.52 stem, acute corners 0.22 stem,
+  arcs trimmed per edge.
+  Concave joins, counters and hidden overlap corners keep their drawn construction.
+
+  Upright: measured stems Thin 32.0, Regular 86.0, Black 196.0 units.
+    5932 corners rounded over 2983 design layers, 3 with a locally reduced radius, 10 zero-length support curves for interpolation.
+    234 fillet joins on turning curves given one handle ratio in every master; 873 kept circular handles, so the variable font can still bend at those joins between masters.
+
+  Italic: measured stems Thin Italic 30.5, Italic 85.9, Black Italic 195.9 units.
+    6460 corners rounded over 2983 design layers, 5 with a locally reduced radius, 7 zero-length support curves for interpolation.
+    440 fillet joins on turning curves given one handle ratio in every master; 1620 kept circular handles, so the variable font can still bend at those joins between masters.
+  Upright static instances: every named weight rounded from its own interpolated outline (5964 intermediate layers), not interpolated between rounded masters.
+  Italic static instances: every named weight rounded from its own interpolated outline (5964 intermediate layers), not interpolated between rounded masters.
+
+Acknowledgements
+  Geist Sans by Basement.studio, Andrés Briganti, Mateo Zaragoza, published by Vercel under the SIL Open Font License 1.1.
+  Goeist is independent and not affiliated with or endorsed by Vercel, Inc.

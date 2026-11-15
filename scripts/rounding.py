@@ -19,8 +19,12 @@ from pathlib import Path
 from statistics import median
 
 from glyphsLib import GSFont
-from glyphsLib.classes import CURVE, LINE, OFFCURVE, GSFeature, GSNode
+from glyphsLib.classes import CURVE, LINE, OFFCURVE, GSAnchor, GSComponent, GSFeature, GSLayer, GSNode, GSPath
+from glyphsLib.builder.transformations.propagate_anchors import propagate_all_anchors
+from glyphsLib.filters.eraseOpenCorners import EraseOpenCornersPen
+from glyphsLib.types import Point
 import pathops
+from fontTools.misc.roundTools import otRound
 
 from families import FAMILIES, FONT_VERSION, FONT_VERSION_STRING, SOFT, Family, Profile
 
@@ -227,16 +231,20 @@ class OutlineContext:
         if glyph.name in stack:
             raise GeometryError(f"Component cycle: {' -> '.join((*stack, glyph.name))}")
         result = InkGeometry()
+        # Ink as compiled: glyphsLib erases Glyphs open corners (the crossing
+        # loops that cut a terminal or an arrow tip) at export, so a loop corner
+        # is not exposed ink and must not be filleted into a visible blob.
+        pen = EraseOpenCornersPen(result.ink.getPen())
         for path in layer.paths:
             contour = Contour(path)
             result.append(contour.polygon())
-            result.ink.moveTo(*contour.segments[0].points[0])
+            pen.moveTo(contour.segments[0].points[0])
             for segment in contour.segments:
                 if len(segment.points) == 2:
-                    result.ink.lineTo(*segment.points[-1])
+                    pen.lineTo(segment.points[-1])
                 else:
-                    result.ink.cubicTo(*(coordinate for p in segment.points[1:] for coordinate in p))
-            result.ink.close()
+                    pen.curveTo(*segment.points[1:])
+            pen.closePath()
         for component in layer.components:
             base = self.font.glyphs[component.name]
             if base is None:
@@ -302,6 +310,39 @@ def ink_side(polygons, position, direction, probe):
     return 1 if left and not right else -1 if right and not left else 0
 
 
+def ink_depth(polygons, origin, direction):
+    """Distance from `origin` along `direction` to the nearest outline crossing."""
+    best = math.inf
+    for polygon in polygons:
+        for a, b in zip(polygon, polygon[1:] + polygon[:1]):
+            edge = sub(b, a)
+            denominator = cross(direction, edge)
+            if abs(denominator) < EPSILON:
+                continue
+            offset = sub(a, origin)
+            distance = cross(offset, edge) / denominator
+            fraction = cross(offset, direction) / denominator
+            # The origin lies on the true curve; its own flattened edge sits
+            # within the flattening tolerance and is not a crossing.
+            if distance > FLATNESS * 6 and -1e-9 <= fraction <= 1 + 1e-9:
+                best = min(best, distance)
+    return best
+
+
+def local_thickness(polygons, incoming, outgoing, side, stem):
+    """Ink thickness across a convex corner: the thinner of its two edges,
+    measured perpendicular from a point a little way along each edge."""
+    result = math.inf
+    for segment, at_end in ((incoming, True), (outgoing, False)):
+        distance = min(stem * 0.25, segment.length * 0.25)
+        t = segment.parameter(segment.length - distance if at_end else distance)
+        position = evaluate(segment.points, t)
+        direction = tangent(split(segment.points, t)[1])
+        inward = (-direction[1] * side, direction[0] * side)
+        result = min(result, ink_depth(polygons, position, inward))
+    return result
+
+
 def classify_corner(contour, index, polygons, stem, profile: Profile = SOFT):
     node = contour.nodes[index]
     if node.smooth:
@@ -327,6 +368,8 @@ def classify_corner(contour, index, polygons, stem, profile: Profile = SOFT):
     if turn * side_in < 0:
         return "concave_ink_join_or_counter", None
     radius = stem * (profile.terminal if abs(turn) <= math.radians(110) else profile.acute)
+    if profile.local:
+        radius = min(radius, profile.local * local_thickness(polygons, incoming, outgoing, side_in, stem))
     return "convex", (radius, abs(turn))
 
 
@@ -442,8 +485,11 @@ def write_contour(contour, selected, corners):
 
     A hidden, smooth or tangent counterpart receives a zero-length compatible
     cubic, not a moved point. The explicit report records these support nodes.
+    Returns [(node index, handle index, opposite index)] for both ends of every
+    selected fillet: the join node, the fillet handle beside it, and the point
+    on the retained side that sets the join's tangent.
     """
-    nodes = []
+    nodes, joins = [], []
     count = len(contour.nodes)
     for index, segment in enumerate(contour.segments):
         next_index = (index + 1) % count
@@ -462,11 +508,53 @@ def write_contour(contour, selected, corners):
         nodes.append(endpoint)
         if next_index in selected:
             fillet = corners[next_index].curve if next_index in corners else (retained[-1],) * 4
+            joins.append((len(nodes) - 1, len(nodes), len(nodes) - 2))
             nodes.extend(GSNode(p, type=OFFCURVE) for p in fillet[1:3])
             nodes.append(GSNode(fillet[-1], type=CURVE, smooth=True))
+            joins.append((len(nodes) - 1, len(nodes) - 2, len(nodes)))
     # Keep the first original on-curve as the cyclic starting correspondence.
     # The emitted list starts after it, identically in every compatible layer.
     contour.path.nodes = nodes
+    return joins
+
+
+# Joins whose ratio would need a fillet handle changed by more than this factor
+# keep their circular handles; the kink there is smaller than the distortion.
+JOIN_RATIO_LIMIT = 1.6
+
+
+def equalize_join_ratios(paths, joins):
+    """Give every fillet join one handle-to-tangent ratio in all compatible layers.
+
+    At a smooth join, the interpolated handle stays collinear with the retained
+    side only if |fillet handle| / |opposite side| is the same in every master,
+    or the tangent direction is. Where the direction changes across masters
+    (curved terminals, diagonals), each fillet handle is rescaled along its own
+    direction to the geometric mean ratio. Returns (equalized, kept) counts.
+    """
+    equalized = kept = 0
+    count = len(paths[0].nodes)
+    for node, handle, opposite in joins:
+        rows = []
+        for path in paths:
+            p = point(path.nodes[node])
+            h = point(path.nodes[handle % count])
+            o = point(path.nodes[opposite % count])
+            rows.append((p, sub(h, p), math.dist(o, p), sub(p, o)))
+        if any(math.hypot(*arm) < 1e-6 or side < 1e-6 for _, arm, side, _ in rows):
+            continue
+        directions = [unit(direction) for *_, direction in rows]
+        if all(abs(cross(directions[0], d)) < 1e-3 and dot(directions[0], d) > 0 for d in directions):
+            continue
+        ratios = [math.hypot(*arm) / side for _, arm, side, _ in rows]
+        target = math.exp(sum(map(math.log, ratios)) / len(ratios))
+        if max(target / r for r in ratios) > JOIN_RATIO_LIMIT or min(target / r for r in ratios) < 1 / JOIN_RATIO_LIMIT:
+            kept += 1
+            continue
+        for path, (p, arm, side, _) in zip(paths, rows):
+            path.nodes[handle % count].position = add(p, unit(arm), target * side)
+        equalized += 1
+    return equalized, kept
 
 
 def design_layers(glyph, font):
@@ -597,8 +685,115 @@ def exact_geometry(glyph, font, codepoints):
     return any(int(code, 16) in codepoints for code in base.unicodes or ())
 
 
-def round_font(original, family: Family = FAMILIES["Goeist"]):
-    """Return a deep-copied GSFont plus a machine-readable geometry audit."""
+INTERMEDIATE_WEIGHTS = (200, 300, 500, 600, 700, 800)
+
+
+def _lerp_point(a, b, t):
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+
+def add_intermediate_layers(font, weights=INTERMEDIATE_WEIGHTS):
+    """Add a brace layer at each weight, interpolated from the unrounded design.
+
+    A fillet is not linear in weight: interpolating rounded Thin, Regular and
+    Black masters bends the joins of curved terminals by up to 30° in between.
+    Rounding each named weight from its own interpolated outline makes every
+    static instance exact. Widths are rounded as the baseline rounds them and
+    anchors stay fractional like the baseline's, so no metric moves. Every
+    glyph gets the same layer id per weight, so components find their base's
+    layer. Returns the number of layers added.
+    """
+    if not font.masters or len(font.masters[0].axes) != 1:
+        return 0
+    # Composites inherit anchors from their components at export. Make the
+    # masters' inherited anchors explicit first, so each brace layer carries the
+    # interpolation of the masters' anchors, exactly as the baseline instances
+    # interpolate them, not anchors re-derived from rounded component offsets.
+    propagate_all_anchors(font)
+    positions = {master.id: master.axes[0] for master in font.masters}
+    origin = font.customParameters["Variable Font Origin"]
+    default = positions.get(origin, font.masters[0].axes[0])
+    minimum, maximum = min(positions.values()), max(positions.values())
+
+    def normalized(value):
+        """fontTools' axis normalization, so mixes match the baseline's to the last bit."""
+        if value < default:
+            return (value - default) / (default - minimum)
+        return (value - default) / (maximum - default) if value > default else 0.0
+
+    added = 0
+    for glyph in font.glyphs:
+        stops = sorted(((layer._brace_coordinates()[0] if layer._is_brace_layer() else positions[layer.layerId],
+                         layer) for layer in glyph.layers
+                        if layer.layerId in positions or layer._is_brace_layer()), key=lambda item: item[0])
+        if len(stops) < 2:
+            continue
+        for weight in weights:
+            if any(abs(position - weight) < 1e-6 for position, _ in stops):
+                continue
+            pairs = [(a, b) for a, b in zip(stops, stops[1:]) if a[0] < weight < b[0]]
+            if not pairs:
+                continue
+            (wa, low), (wb, high) = pairs[0]
+            # The baseline instancer adds (other - default) * scalar to the
+            # default master; mix the same way where the span starts there.
+            if wb == default:
+                base_index, scalar = 1, normalized(weight) / normalized(wa)
+            elif wa == default:
+                base_index, scalar = 0, normalized(weight) / normalized(wb)
+            else:
+                base_index, scalar = 0, (weight - wa) / (wb - wa)
+
+            def mix(a, b):
+                base, other = (a, b) if base_index == 0 else (b, a)
+                return base + (other - base) * scalar
+
+            def mix_point(p, q):
+                return mix(p[0], q[0]), mix(p[1], q[1])
+
+            if (len(low.paths) != len(high.paths) or len(low.components) != len(high.components)
+                    or any(len(p.nodes) != len(q.nodes) for p, q in zip(low.paths, high.paths))):
+                raise GeometryError(f"{glyph.name}: layers at {wa:g} and {wb:g} are not interpolation compatible")
+            layer = GSLayer()
+            layer.layerId = f"goeist-intermediate-{weight}"
+            layer.associatedMasterId = low.layerId if low.layerId in positions else low.associatedMasterId
+            layer.name = f"{{{weight}}}"
+            layer.attributes["coordinates"] = [weight]
+            # Integers, as the baseline rounds this weight's interpolated
+            # advance: the brace layer must not move any metric.
+            layer.width = otRound(mix(low.width, high.width))
+            for p, q in zip(low.paths, high.paths):
+                path = GSPath()
+                path.closed = p.closed
+                path.nodes = [GSNode(mix_point(point(m), point(n)), type=m.type, smooth=m.smooth)
+                              for m, n in zip(p.nodes, q.nodes)]
+                layer.shapes.append(path)
+            for c, d in zip(low.components, high.components):
+                component = GSComponent(c.name)
+                component.transform = tuple(mix(x, y) for x, y in zip(c.transform, d.transform))
+                layer.shapes.append(component)
+            high_anchors = {anchor.name: anchor for anchor in high.anchors}
+            for anchor in low.anchors:
+                if anchor.name in high_anchors:
+                    # Fractional, as the baseline interpolates them; rounded once
+                    # when the font is compiled.
+                    layer.anchors.append(GSAnchor(anchor.name, Point(*mix_point(
+                        tuple(anchor.position)[:2], tuple(high_anchors[anchor.name].position)[:2]))))
+            glyph.layers.append(layer)
+            added += 1
+    return added
+
+
+def round_font(original, family: Family = FAMILIES["Goeist"], intermediate_weights=False):
+    """Return a deep-copied GSFont plus a machine-readable geometry audit.
+
+    With `intermediate_weights`, every named weight between the masters is
+    rounded from its own interpolated outline (`add_intermediate_layers`). That
+    source is for static instances only: in a variable font the extra masters'
+    advance deltas are rounded per region and can move advances by a unit.
+    """
+    original = copy.deepcopy(original)
+    intermediate = add_intermediate_layers(original) if intermediate_weights else 0
     font = copy.deepcopy(original)
     context = OutlineContext(original)
     masters = measure_stems(original, context, family.profile)
@@ -606,9 +801,10 @@ def round_font(original, family: Family = FAMILIES["Goeist"]):
         "family": family.name, "version": FONT_VERSION_STRING, "upm": original.upm,
         "original_family": original.familyName,
         "original_version": f"{original.versionMajor}.{original.versionMinor:03d}",
-        "algorithm": "exposed-convex-cubic-fillet-v1", "profile": family.profile.name,
+        "algorithm": "exposed-convex-cubic-fillet-v2", "profile": family.profile.name,
         "flatness": FLATNESS,
-        "masters": masters, "glyphs": [], "counts": Counter(), "exceptions": [],
+        "masters": masters, "glyphs": [], "counts": Counter({"intermediate_layers": intermediate}),
+        "exceptions": [],
         "coordinate_policy": "fractional source coordinates; no pre-cu2qu integer rounding",
     }
     for source_glyph, glyph in zip(original.glyphs, font.glyphs):
@@ -663,10 +859,11 @@ def round_font(original, family: Family = FAMILIES["Goeist"]):
                 prepared.append((contours, decisions, entry))
             for path_index in range(len(prepared[0][0])):
                 selected = set().union(*(decisions[path_index] for _, decisions, _ in prepared))
+                joins = []
                 for contours, decisions, entry in prepared:
                     corners = decisions[path_index]
                     if selected:
-                        write_contour(contours[path_index], selected, corners)
+                        joins = write_contour(contours[path_index], selected, corners)
                     active = len(corners)
                     support = len(selected) - active
                     entry["rounded_corners"] += active
@@ -675,6 +872,11 @@ def round_font(original, family: Family = FAMILIES["Goeist"]):
                         report["exceptions"].append({"glyph": glyph.name, "layer": entry["id"],
                             "path": path_index, "reason": "compatible_unmoved_counterparts",
                             "nodes": [contours[path_index].indices[i] for i in sorted(selected - corners.keys())]})
+                if joins and len(prepared) > 1:
+                    equalized, kept = equalize_join_ratios(
+                        [contours[path_index].path for contours, _, _ in prepared], joins)
+                    report["counts"]["interpolation_join_ratios"] += equalized
+                    report["counts"]["interpolation_join_ratios_kept"] += kept
             for contours, _, entry in prepared:
                 entry["nodes_after"] = sum(len(contour.path.nodes) for contour in contours)
                 item["layers"].append(entry)
@@ -704,9 +906,11 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--family", default="Goeist", choices=sorted(FAMILIES))
+    parser.add_argument("--intermediate-weights", action="store_true",
+                        help="Round every named weight from its own outline (static-instance source)")
     args = parser.parse_args(argv)
     try:
-        font, report = round_font(GSFont(args.source), FAMILIES[args.family])
+        font, report = round_font(GSFont(args.source), FAMILIES[args.family], args.intermediate_weights)
     except GeometryError as error:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps({"status": "failed", "source": str(args.source),

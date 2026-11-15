@@ -1,0 +1,32 @@
+/* Static family: load this OR goeist-serif.css, not both. */
+@font-face {
+  font-family: 'Goeist Serif';
+  src: url('./GoeistSerif-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Goeist Serif Square';
+  src: url('./GoeistSerif-Square.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Goeist Serif Triangle';
+  src: url('./GoeistSerif-Triangle.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Goeist Serif Heart';
+  src: url('./GoeistSerif-Heart.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

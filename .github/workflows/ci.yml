@@ -16,7 +16,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   build:
-    name: Compile and verify Goeist and Goeist Mono
+    name: Compile and verify Goeist, Goeist Mono and Goeist Serif
     runs-on: ubuntu-latest
     env:
       SOURCE_DATE_EPOCH: '1767225600'

@@ -4,11 +4,11 @@
   <img alt="Goeist Sans and Goeist Mono type specimens" src="https://raw.githubusercontent.com/shadcn-labs/goeist-font/main/documentation/img/goeist-banner--light.png" width="1024">
 </picture>
 
-# Goeist Sans & Goeist Mono
+# Goeist Sans, Goeist Mono & Goeist Serif
 
-Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist Sans and Geist Mono](https://github.com/vercel/geist-font).
+Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist Sans, Geist Mono and Geist Serif](https://github.com/vercel/geist-font).
 
-Goeist Sans keeps Geist's proportions and spacing, with softened corners and stroke endings. Goeist Mono is its monospaced partner, rounded as if drawn with one round tool, for code editors, terminals and other text-based interfaces.
+Goeist Sans keeps Geist's proportions and spacing, with softened corners and stroke endings. Goeist Mono is its monospaced partner, rounded as if drawn with one round tool, for code editors, terminals and other text-based interfaces. Goeist Serif is a soft display serif: Geist Serif's saw-toothed serifs end in half-rounds and its hairlines stay fine.
 
 ### Installation
 
@@ -18,16 +18,23 @@ npm install goeist
 
 ### Using with Next.js
 
-`GoeistSans` is exported from `goeist/font/sans` and `GoeistMono` from `goeist/font/mono`. Both are `NextFontWithVariable` instances that load the upright and italic variable fonts through `next/font/local`, so there is nothing else to import. You can learn more by [reading the `next/font` docs](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
+`GoeistSans` is exported from `goeist/font/sans`, `GoeistMono` from `goeist/font/mono` and `GoeistSerif` from `goeist/font/serif`. All are `NextFontWithVariable` instances that load variable fonts through `next/font/local`, so there is nothing else to import. You can learn more by [reading the `next/font` docs](https://nextjs.org/docs/app/building-your-application/optimizing/fonts).
 
 | Export | Entry point | CSS Variable |
 | --- | --- | --- |
 | `GoeistSans` | `goeist/font/sans` | `--font-goeist-sans` |
 | `GoeistMono` | `goeist/font/mono` | `--font-goeist-mono` |
+| `GoeistSerif` | `goeist/font/serif` | `--font-goeist-serif` |
 | `GoeistSansNonVariable` | `goeist/font/sans-non-variable` | `--font-goeist-sans-non-variable` |
 | `GoeistMonoNonVariable` | `goeist/font/mono-non-variable` | `--font-goeist-mono-non-variable` |
+| `GoeistSerifRegular` | `goeist/font/serif/regular` | `--font-goeist-serif-regular` |
+| `GoeistSerifSquare` | `goeist/font/serif/square` | `--font-goeist-serif-square` |
+| `GoeistSerifTriangle` | `goeist/font/serif/triangle` | `--font-goeist-serif-triangle` |
+| `GoeistSerifHeart` | `goeist/font/serif/heart` | `--font-goeist-serif-heart` |
 
-The non-variable exports load 18 static files and are only needed for browsers without variable-font support.
+The Sans and Mono non-variable exports load 18 static files and are only needed for browsers without variable-font support.
+
+Goeist Serif has one Regular weight. Its variable font carries every dot shape on the Element Shape axis: set `font-variation-settings: "ELSH" 25` for square dots, `50` for triangles or `100` for hearts (`0`, round, is the default). Each shape also ships as its own static file, so you only download the one you use.
 
 #### App Router
 
@@ -128,13 +135,21 @@ Outside Next.js, import the stylesheet once and use the font family by name:
 ```js
 import "goeist/sans.css"; // or "goeist/sans-static.css"
 import "goeist/mono.css"; // or "goeist/mono-static.css"
+import "goeist/serif.css"; // or "goeist/serif-static.css"
 ```
 
 ```css
 body {
   font-family: "Goeist", sans-serif;
 }
+
+h1 {
+  font-family: "Goeist Serif", serif;
+  font-variation-settings: "ELSH" 25; /* square dots; omit for round */
+}
 ```
+
+With `serif-static.css`, each shape is its own family: `"Goeist Serif"`, `"Goeist Serif Square"`, `"Goeist Serif Triangle"` and `"Goeist Serif Heart"`.
 
 ### License
 

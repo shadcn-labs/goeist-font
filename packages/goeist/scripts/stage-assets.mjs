@@ -11,10 +11,11 @@ const repo = join(pkg, "..", "..");
 const FAMILIES = [
   { family: "Goeist", css: "goeist", slug: "goeist-sans" },
   { family: "GoeistMono", css: "goeist-mono", slug: "goeist-mono" },
+  { family: "GoeistSerif", css: "goeist-serif", slug: "goeist-serif" },
 ];
 
 // Bracketed axis names are renamed so bundlers never see `[...]` in asset paths.
-const variableName = (file) => file.replace(/\[wght\]\.woff2$/, "-Variable.woff2");
+const variableName = (file) => file.replace(/\[(wght|ELSH)\]\.woff2$/, "-Variable.woff2");
 
 for (const { family, css: stem, slug } of FAMILIES) {
   const source = join(repo, "fonts", family, "webfonts");
@@ -35,7 +36,7 @@ for (const { family, css: stem, slug } of FAMILIES) {
   const cssName = (file) => file.replace(new RegExp(`^${stem}(-static)?\\.css$`), `${slug}$1.css`);
   for (const file of files.filter((name) => name.endsWith(".css"))) {
     const css = readFileSync(join(source, file), "utf8")
-      .replace(/[\w-]+\[wght\]\.woff2/g, variableName)
+      .replace(/[\w-]+\[(wght|ELSH)\]\.woff2/g, variableName)
       .replace(new RegExp(`\\b${stem}(-static)?\\.css\\b`, "g"), (name) => cssName(name));
     writeFileSync(join(target, cssName(file)), css);
   }
