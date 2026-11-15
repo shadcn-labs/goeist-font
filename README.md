@@ -8,16 +8,13 @@
 
 # Goeist Sans, Goeist Mono & Goeist Serif
 
-> **Experimental** <br>
-> Goeist is an early public preview and is not recommended for production use. Some glyphs, ligatures, and symbols have known issues. Letterforms and spacing may change between releases. Feedback and issue reports are welcome.
-
 Goeist is a font family created by [Aniket Pawar](https://github.com/Aniket-508) at [Shadcn Labs](https://shadcn-labs.com/font). It is a rounded take on [Geist](https://github.com/vercel/geist-font) by Vercel and Basement Studio.
 
 Goeist Sans keeps Geist's proportions, spacing and OpenType features, and softens every exposed corner and stroke ending. It is designed for interfaces, body copy and display sizes where Geist should feel a little warmer.
 
 Goeist Mono is the monospaced partner to Goeist Sans. Every corner is rounded as if drawn with one round tool, so stroke ends, slabs and dots become semicircles while widths stay fixed. It is designed to be used in code editors, terminals and other text-based interfaces, and keeps Geist Mono's coding ligatures.
 
-Goeist Serif is a soft take on [Geist Serif](https://vercel.com/blog/introducing-geist-serif), the high-contrast display serif. Its saw-toothed serif tips are thickened into half-rounds at their original reach, cut terminals on letters such as c, s, r and the figures end in circular arcs, and every other corner is rounded in proportion to its own stroke, so hairlines stay fine. Like Geist Serif it comes in one Regular weight, with the Element Shape (`ELSH`) axis choosing round, square, triangle or heart dots.
+Goeist Serif is the editorial partner to Goeist Sans, a soft take on [Geist Serif](https://vercel.com/blog/introducing-geist-serif). Its saw-toothed serifs end in half-rounds and its cut terminals in circular arcs, while hairlines and contrast stay fine. It is designed for headlines, posters and other display sizes, and keeps Geist Serif's Element Shape axis for round, square, triangle or heart dots.
 
 ### Installation
 
