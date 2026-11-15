@@ -92,7 +92,7 @@ Pushes without changesets publish nothing: the workflow skips versions already o
 
 ## Source and rounding
 
-Each family's original editable packages are vendored unchanged under `sources/<Family>/upstream/`, pinned to [Geist v1.9.2](https://github.com/vercel/geist-font/releases/tag/v1.9.2), commit `ef2597cfc42f4797676df105517ccc0a1cfa6569`. `manifest.json` records provenance and immutable reference-font hashes. The design research behind the profiles is in [`research/`](research/README.md).
+Each family's original editable packages are vendored unchanged under `sources/<Family>/upstream/`, pinned to [Geist v1.9.2](https://github.com/vercel/geist-font/releases/tag/v1.9.2), commit `ef2597cfc42f4797676df105517ccc0a1cfa6569`. `manifest.json` records provenance and immutable reference-font hashes.
 
 `scripts/rounding.py` measures stems per master, then trims neighboring line/cubic segments and inserts tangent cubic fillets. Exact Bézier ink containment prevents polygon-approximation errors at curved terminals. Hidden overlap corners and concave counter corners retain their original construction. Short edges constrain local radii rather than allowing adjacent fillets to cross.
 
